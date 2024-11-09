@@ -2,6 +2,9 @@
 `define ROB_SIZE 16
 `define ROB_WIDTH 4
 
+`define RS_SIZE 8
+`define RS_WIDTH 3
+
 // OpType
 `define U 3'b000
 `define J 3'b001
@@ -9,6 +12,7 @@
 `define I 3'b011
 `define S 3'b100
 `define R 3'b101
+`define NT 3'b111
 
 // OpCode
 `define LUI 8'b0
@@ -48,3 +52,4 @@
 `define SRA 8'b100010
 `define OR 8'b100011
 `define AND 8'b100100
+`define NOP 8'b11111111
