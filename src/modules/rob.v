@@ -19,6 +19,9 @@ module rob(
     input wire [4:0] rd,
     input wire [31:0] val,
 
+    // to decoder: freeze
+    output wire freeze,
+
     // from rs
     input wire rs_ready,
     input wire [`ROB_WIDTH-1:0] rs_rob_id,
@@ -45,6 +48,7 @@ module rob(
     output wire search_ready_2,
     output wire [31:0] search_val_2
 
+
 );
 
     localparam IS = 2'b00;
@@ -61,8 +65,10 @@ module rob(
     reg [`ROB_WIDTH-1:0] tail;
 
     // instruction
-    reg [3:0] inst_type[0:`ROB_SIZE-1];
-    reg [8:0] inst_op[0:`ROB_SIZE-1];
+    reg [2:0] inst_type[0:`ROB_SIZE-1];
+    reg [7:0] inst_op[0:`ROB_SIZE-1];
+
+    reg has_jalr;
 
     assign search_ready_1 = status[search_rob_id_1] == WR;
     assign search_ready_2 = status[search_rob_id_2] == WR;
@@ -71,6 +77,7 @@ module rob(
     assign rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
+    assign freeze = has_jalr;
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -94,6 +101,9 @@ module rob(
                 end else begin
                     store_enable <= 0;
                 end 
+                if(op == `JALR) begin
+                    has_jalr <= 1;
+                end
                 busy[tail] <= 1;
                 inst_rd[tail] <= rd;
                 inst_val[tail] <= val;

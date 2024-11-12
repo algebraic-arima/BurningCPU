@@ -5,6 +5,9 @@
 `define RS_SIZE 8
 `define RS_WIDTH 3
 
+`define LSB_SIZE 8
+`define LSB_WIDTH 3
+
 // OpType
 `define U 3'b000
 `define J 3'b001
