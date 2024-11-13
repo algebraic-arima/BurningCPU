@@ -1,6 +1,3 @@
-`include "params.v"
-`include "alu/alu_rs.v"
-
 module rs (
     input wire clk_in,  // system clock signal
     input wire rst_in,  // reset signal

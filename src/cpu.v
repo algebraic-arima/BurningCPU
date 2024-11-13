@@ -27,7 +27,7 @@ module cpu(
 // - 0x30000 write: write a byte to output (write 0x00 is ignored)
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
-
+assign mem_a = 32'h0;
 always @(posedge clk_in)
   begin
     if (rst_in)

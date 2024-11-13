@@ -1,5 +1,3 @@
-`include "params.v"
-
 module decoder(
     input wire clk_in,  // system clock signal
     input wire rst_in,  // reset signal
@@ -10,8 +8,8 @@ module decoder(
     input wire freeze,
 
     // from to memctrl
-    output wire if_enable,
-    output wire [31:0] if_addr,
+    output reg if_enable,
+    output reg [31:0] if_addr,
     input wire inst_ready,
     input wire [31:0] inst, // current instruction
 
@@ -69,8 +67,20 @@ module decoder(
 
 );
 
+    localparam lui = 7'b0110111;
+    localparam auipc = 7'b0010111;
+    localparam jal = 7'b1101111;    
+    localparam jalr = 7'b1100111;
+    localparam b = 7'b1100011;
+    localparam l = 7'b0000011;
+    localparam s = 7'b0100011;
+    localparam im = 7'b0010011;
+    localparam r = 7'b0110011;    
+
     reg freezed;
-    reg [31:0] inst_addr; // the addr next inst
+    reg [31:0] inst_addr; // the addr of cur inst
+    reg fetching;
+    // reg [31:0] inst_new_addr; // the addr of next inst
 
     wire [6:0] op_code = inst[6:0];
     wire [4:0] rd = inst[11:7];
@@ -83,6 +93,8 @@ module decoder(
     wire [12:1] imm_b = {inst[31], inst[7], inst[30:25], inst[11:8]};
     wire [11:0] imm_s = {inst[31:25], inst[11:7]};
     wire [4:0] shamt = inst[24:20];
+
+    wire push_rs, push_lsb;
 
     reg [31:0] rs1_val;
     reg [31:0] rs2_val;
@@ -108,9 +120,30 @@ module decoder(
     assign lsb_dep_k = rs2_dep;
     assign lsb_rob_id = empty_rob_id;
 
+    assign push_rs = !push_lsb;
+    assign push_lsb = op_code == l || op_code == s;
+    assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
+
     always @(posedge clk_in) begin: Main
         if (rst_in) begin
+            freezed <= 0;
+            rs1_val <= 0;
+            rs2_val <= 0;
+            rs1_has_dep <= 0;
+            rs2_has_dep <= 0;
+            fetching <= 0;
+        end if (rdy_in && clear) begin
+            freezed <= 0;
+            fetching <= 0; // cause memctrl to pause
+            inst_addr <= corr_inst_addr;
+        end else if (!fetching && work_enable) begin
+            fetching <= 1;
+            if_enable <= 1;
+            if_addr <= inst_addr;
+        end else if (fetching) begin
             
+        end else if (inst_ready) begin
+            // new_inst_addr <= ?
         end
     end
 
