@@ -14,13 +14,13 @@ module rob(
     input wire dec_ready,
     input wire [31:0] addr,
     input wire [31:0] j_addr,
-    input wire [3:0] type,
-    input wire [8:0] op,
+    input wire [2:0] type,
+    input wire [7:0] op,
     input wire [4:0] rd,
     input wire [31:0] val,
 
     // to decoder: freeze
-    output wire freeze,
+    output wire melt,
 
     // from rs
     input wire rs_ready,
@@ -72,12 +72,12 @@ module rob(
 
     assign search_ready_1 = status[search_rob_id_1] == WR;
     assign search_ready_2 = status[search_rob_id_2] == WR;
-    assign search_val_1 = val[search_rob_id_1];
-    assign search_val_2 = val[search_rob_id_2];
+    assign search_val_1 = inst_val[search_rob_id_1];
+    assign search_val_2 = inst_val[search_rob_id_2];
     assign rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
-    assign freeze = has_jalr;
+    assign melt = !has_jalr;
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -140,6 +140,9 @@ module rob(
                     store_enable <= 1;
                 end else begin
                     store_enable <= 0;
+                end
+                if (inst_op[head] == `JALR) begin
+                    has_jalr <= 0;
                 end
             end
         end
