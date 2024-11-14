@@ -25,7 +25,7 @@ module memctrl(
     input wire [31:0] store_val,
     input wire is_signed,
     input wire [1:0] data_width, // 0 for byte, 1 for half, 2 for word
-    output wire ls_finish,
+    output wire ls_finished,
     output wire [31:0] load_val
 
 );

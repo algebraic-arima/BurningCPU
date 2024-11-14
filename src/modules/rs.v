@@ -1,3 +1,5 @@
+`include "params.v"
+
 module rs (
     input wire clk_in,  // system clock signal
     input wire rst_in,  // reset signal
@@ -9,8 +11,7 @@ module rs (
 
     // from decoder
     input wire dec_ready,
-    input wire [2:0] type,
-    input wire [7:0] op,
+    input wire [4:0] type,
     input wire [31:0] val_j,
     input wire [31:0] val_k,
     input wire has_dep_j,
@@ -18,6 +19,8 @@ module rs (
     input wire [`ROB_WIDTH-1:0] dep_j,
     input wire [`ROB_WIDTH-1:0] dep_k,
     input wire [`ROB_WIDTH-1:0] rob_id,
+    input wire [31:0] tja,
+    input wire [31:0] fja,
 
     // from rs
     input wire rs_ready,
@@ -34,12 +37,12 @@ module rs (
     output wire [`ROB_WIDTH-1:0] dest_rob_id,
     output wire [31:0] value
 
-    
 );
 
+    
+
     reg busy [0:`RS_SIZE-1];
-    reg [3:0] inst_type[0:`RS_SIZE-1];
-    reg [8:0] inst_op[0:`RS_SIZE-1];
+    reg [4:0] inst_type[0:`RS_SIZE-1]; // [4] branch, [3] = inst[30], [2:0] = inst[14:12]
     reg [31:0] vj[0:`RS_SIZE-1];
     reg [31:0] vk[0:`RS_SIZE-1];
     reg dj[0:`RS_SIZE-1];
@@ -47,6 +50,8 @@ module rs (
     reg [`ROB_WIDTH-1:0] qj[0:`RS_SIZE-1]; // dependence of vj
     reg [`ROB_WIDTH-1:0] qk[0:`RS_SIZE-1];
     reg [31:0] a[0:`RS_SIZE-1];
+    reg [31:0] true_jaddr[0:`RS_SIZE-1];
+    reg [31:0] false_jaddr[0:`RS_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`RS_SIZE-1]; // which rob depends on this
     reg val_ready [0:`RS_SIZE-1];
 
@@ -77,7 +82,7 @@ module rs (
         assign pos_idle = fpos_idle[`RS_SIZE-1];
     endgenerate
 
-    alu_rs alu(
+    alu alu0(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .rdy_in(rdy_in),
@@ -87,8 +92,11 @@ module rs (
 
         .lhs(vj[pos_calc]),
         .rhs(vk[pos_calc]),
-        .op(inst_op[pos_calc]),
+        .op(inst_type[pos_calc]),
         .rob_dep(rob_dest[pos_calc]),
+
+        .true_jaddr(true_jaddr[pos_calc]),
+        .false_jaddr(false_jaddr[pos_calc]),
 
         .ready(ready),
         .rob_id(dest_rob_id),
@@ -102,7 +110,6 @@ module rs (
             for (i = 0; i < `RS_SIZE; i = i + 1) begin
                 busy[i] <= 0;
                 inst_type[i] <= 0;
-                inst_op[i] <= 0;
                 vj[i] <= 0;
                 vk[i] <= 0;
                 dj[i] <= 0;
@@ -141,7 +148,6 @@ module rs (
             if (dec_ready) begin
                 busy[pos_idle] <= 1;
                 inst_type[pos_idle] <= type;
-                inst_op[pos_idle] <= op;
                 vj[pos_idle] = !has_dep_j ? val_j : (rs_ready && dep_j == rs_rob_id) ? rs_value : (lsb_ready && dep_j == lsb_rob_id) ? lsb_value : 0;
                 vk[pos_idle] = !has_dep_k ? val_k : (rs_ready && dep_k == rs_rob_id) ? rs_value : (lsb_ready && dep_k == lsb_rob_id) ? lsb_value : 0;
                 dj[pos_idle] <= has_dep_j && !(rs_ready && dep_j == rs_rob_id) && !(lsb_ready && dep_j == lsb_rob_id);
@@ -149,6 +155,8 @@ module rs (
                 qj[pos_idle] <= dep_j;
                 qk[pos_idle] <= dep_k;
                 rob_dest[pos_idle] <= rob_id;
+                true_jaddr[pos_idle] <= tja;
+                false_jaddr[pos_idle] <= fja;
             end
         end
     end

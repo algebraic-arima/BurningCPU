@@ -12,18 +12,20 @@ module rob(
     input wire dec_ready,
     input wire [31:0] addr,
     input wire [31:0] j_addr,
-    input wire [2:0] type,
-    input wire [7:0] op,
+    input wire [1:0] type,
     input wire [4:0] rd,
     input wire [31:0] val,
 
     // to decoder: freeze
     output wire melt,
+    // to decoder: predict false
+    output wire [31:0] corr_jump_addr,
+
 
     // from rs
     input wire rs_ready,
     input wire [`ROB_WIDTH-1:0] rs_rob_id,
-    input wire [31 : 0] rs_value,
+    input wire [31 : 0] rs_value, // if br. return the correct addr to jump
 
     // from lsb
     input wire lsb_ready,
@@ -53,18 +55,22 @@ module rob(
     localparam WR = 2'b01;
     localparam CO = 2'b11;
 
+    localparam BR = 2'b00;
+    localparam ST = 2'b01;
+    localparam JALR = 2'b10;
+    localparam RG = 2'b11;
+
     reg busy[0:`ROB_SIZE-1];
     reg [1:0] status[0:`ROB_SIZE-1]; // IS, WR, CO
     reg [4:0] inst_rd[0:`ROB_SIZE-1];
-    reg [31:0] inst_val[0:`ROB_SIZE-1]; // for branch: true jump addr
+    reg [31:0] inst_val[0:`ROB_SIZE-1]; // for branch, true jump addr; for others, the value of rd
     reg [31:0] inst_addr[0:`ROB_SIZE-1];
     reg [31:0] jump_addr[0:`ROB_SIZE-1]; // for branch: predicted jump addr
     reg [`ROB_WIDTH-1:0] head;
     reg [`ROB_WIDTH-1:0] tail;
 
-    // instruction
-    reg [2:0] inst_type[0:`ROB_SIZE-1];
-    reg [7:0] inst_op[0:`ROB_SIZE-1];
+    // instruction type: BR, ST, JALR, RG
+    reg [1:0] inst_type[0:`ROB_SIZE-1];
 
     reg has_jalr;
 
@@ -88,18 +94,16 @@ module rob(
                 inst_val[i] <= 0;
                 inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
-                inst_type[i] <= `NT;
-                inst_op[i] <= `NOP;
             end
         end else if (rdy_in) begin
             // update
             if(dec_ready) begin
-                if(rob_empty && type == `S) begin
+                if(rob_empty && type == ST) begin
                     store_enable <= 1;
                 end else begin
                     store_enable <= 0;
                 end 
-                if(op == `JALR) begin
+                if(type == JALR) begin
                     has_jalr <= 1;
                 end
                 busy[tail] <= 1;
@@ -108,7 +112,6 @@ module rob(
                 inst_addr[tail] <= addr;
                 jump_addr[tail] <= j_addr;
                 inst_type[tail] <= type;
-                inst_op[tail] <= op;
                 status[tail] <= IS;
                 tail <= tail + 1;
             end
@@ -124,22 +127,23 @@ module rob(
             if (busy[head] && (status[head] == CO || status[head] == WR)) begin
                 head <= head + 1;
                 busy[head] <= 0;
-                if (inst_type[head] == `B) begin
+                if (inst_type[head] == BR) begin
                     if (inst_val[head] != jump_addr[head]) begin
                         clear <= 1;
+                        corr_jump_addr <= inst_val[head];
                     end
-                end else if (inst_type[head] == `S) begin
+                end else if (inst_type[head] == ST) begin
                 end else begin
                     commit_rob_id <= head;
                     commit_reg_id <= inst_rd[head];
                     commit_val <= inst_val[head];
                 end
-                if (busy[head + 1] && inst_type[head + 1] == `S) begin
+                if (busy[head + 1] && inst_type[head + 1] == ST) begin
                     store_enable <= 1;
                 end else begin
                     store_enable <= 0;
                 end
-                if (inst_op[head] == `JALR) begin
+                if (inst_type[head] == JALR) begin
                     has_jalr <= 0;
                 end
             end

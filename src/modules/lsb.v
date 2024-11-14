@@ -1,3 +1,14 @@
+`include "params.v"
+
+`define LB 4'b0000
+`define LH 4'b0001
+`define LW 4'b0010
+`define LBU 4'b0100
+`define LHU 4'b0101
+`define SB 4'b1000
+`define SH 4'b1001
+`define SW 4'b1010
+
 module lsb(
     input wire clk_in,  // system clock signal
     input wire rst_in,  // reset signal
@@ -9,8 +20,7 @@ module lsb(
 
     // from decoder
     input wire dec_ready,
-    input wire [2:0] type,
-    input wire [7:0] op,
+    input wire [3:0] type,
     input wire [31:0] val_j, // store val
     input wire [31:0] val_k, // store/load addr
     input wire has_dep_j,
@@ -33,11 +43,12 @@ module lsb(
     // from rob
     input wire store_enable,
 
-    // to ram
+    // to memctrl
     output wire re,
     output wire we,
     output wire [31:0] addr,
     output wire [31:0] store_val,
+    input wire ls_finished,
     input wire [31:0] read_val,
 
     // broadcast that a rob is ready
@@ -51,7 +62,7 @@ module lsb(
 
     reg busy [0:`LSB_SIZE-1];
     reg is_write [0:`LSB_SIZE-1];
-    reg [7:0] inst_op[0:`LSB_SIZE-1];
+    reg [3:0] inst_op[0:`LSB_SIZE-1];
     reg [31:0] vj[0:`LSB_SIZE-1];
     reg [31:0] vk[0:`LSB_SIZE-1];
     reg dj[0:`LSB_SIZE-1];
@@ -84,7 +95,34 @@ module lsb(
             head <= 0;
             tail <= 0;
         end else if (rdy_in) begin
-            
+            // update dependence
+            for (i = 0; i < `ROB_SIZE; ++i) begin
+                if (busy[i] && rs_ready) begin
+                    if(dj[i] && qj[i] == rs_rob_id) begin
+                        vj[i] <= rs_value;
+                        dj[i] <= 0;
+                    end
+                    if(dk[i] && qk[i] == rs_rob_id) begin
+                        vk[i] <= rs_value;
+                        dk[i] <= 0;
+                    end
+                end
+                if (busy[i] && lsb_ready) begin
+                    if(dj[i] && qj[i] == lsb_rob_id) begin
+                        vj[i] <= lsb_value;
+                        dj[i] <= 0;
+                    end
+                    if(dk[i] && qk[i] == lsb_rob_id) begin
+                        vk[i] <= lsb_value;
+                        dk[i] <= 0;
+                    end
+                end
+            end
+            // issue
+            if (dec_ready) begin
+                
+            end
+            // read from ram
         end
     end
 
