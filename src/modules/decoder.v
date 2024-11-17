@@ -79,7 +79,6 @@ module decoder(
     reg freezed;
     reg [31:0] last_inst;
     reg [31:0] inst_addr; // the addr of cur inst
-    reg fetching;
     wire [31:0] next_addr; // the addr of next inst
 
     wire [6:0] op_code = inst[6:0];
@@ -125,10 +124,10 @@ module decoder(
     assign push_lsb = op_code == l || op_code == s;
     assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
 
-    assign next_addr = clear ? new_inst_addr : (fetching && !inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : op_code == b ? inst_addr + imm_b : inst_addr + 4);
+    assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : op_code == b ? inst_addr + imm_b : inst_addr + 4);
     // always predict jump
 
-    assign if_enable = (!fetching || inst_ready) && work_enable;
+    assign if_enable = (inst_ready) && work_enable;
     assign if_addr = next_addr;
 
     always @(posedge clk_in) begin: Main
@@ -138,15 +137,10 @@ module decoder(
             rs2_val <= 0;
             rs1_has_dep <= 0;
             rs2_has_dep <= 0;
-            fetching <= 0;
         end if (rdy_in && clear) begin
             freezed <= 0;
-            fetching <= 0; // cause memctrl to pause
+            // clear will cause memctrl to pause
             inst_addr <= corr_inst_addr;
-        end else if ((!fetching || inst_ready) && work_enable) begin
-            fetching <= 1;
-        end else if (fetching) begin
-            
         end else if (inst_ready) begin
             inst_addr <= next_addr;
 
