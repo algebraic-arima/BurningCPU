@@ -78,7 +78,7 @@ module decoder(
 
     reg freezed;
     reg [31:0] last_inst;
-    reg [31:0] inst_addr; // the addr of cur inst
+    reg [31:0] inst_addr = 0; // the addr of cur inst
     wire [31:0] next_addr; // the addr of next inst
 
     wire [6:0] op_code = inst[6:0];
@@ -86,16 +86,14 @@ module decoder(
     wire [3:0] op_type = inst[14:12];
     wire [4:0] rs1 = inst[19:15];
     wire [4:0] rs2 = inst[24:20];
-    wire [31:12] imm_u = inst[31:12];
-    wire [20:1] imm_j = {inst[31], inst[19:12], inst[20], inst[30:21]};
+    wire [31:0] imm_u = {inst[31:12], 12'b0};
+    wire [20:0] imm_j = {inst[31], inst[19:12], inst[20], inst[30:21], 1'b0};
     wire [11:0] imm_i = inst[31:20];
-    wire [12:1] imm_b = {inst[31], inst[7], inst[30:25], inst[11:8]};
+    wire [12:0] imm_b = {inst[31], inst[7], inst[30:25], inst[11:8], 1'b0};
     wire [11:0] imm_s = {inst[31:25], inst[11:7]};
 
     wire push_rs, push_lsb;
 
-    reg [2:0] type; 
-    reg [7:0] op;
     reg [31:0] rs1_val;
     reg [31:0] rs2_val;
     reg rs1_has_dep, rs2_has_dep;
@@ -124,7 +122,8 @@ module decoder(
     assign push_lsb = op_code == l || op_code == s;
     assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
 
-    assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : op_code == b ? inst_addr + imm_b : inst_addr + 4);
+    wire j = 1'b1;
+    assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : inst_addr + 4);
     // always predict jump
 
     assign if_enable = (inst_ready) && work_enable;
@@ -137,7 +136,11 @@ module decoder(
             rs2_val <= 0;
             rs1_has_dep <= 0;
             rs2_has_dep <= 0;
-        end if (rdy_in && clear) begin
+            rs1_dep <= 0;
+            rs2_dep <= 0;
+            last_inst <= 0;
+            inst_addr <= 0;
+        end else if (rdy_in && clear) begin
             freezed <= 0;
             // clear will cause memctrl to pause
             inst_addr <= corr_inst_addr;

@@ -1,5 +1,3 @@
-`include "params.v"
-
 `define LB 4'b0000
 `define LH 4'b0001
 `define LW 4'b0010

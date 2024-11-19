@@ -19,7 +19,7 @@ module rob(
     // to decoder: freeze
     output wire melt,
     // to decoder: predict false
-    output wire [31:0] corr_jump_addr,
+    output reg [31:0] corr_jump_addr,
 
 
     // from rs
