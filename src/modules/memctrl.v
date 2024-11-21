@@ -67,7 +67,7 @@ module memctrl(
             cur_addr <= 0;
             cur_store_val <= 0;
             cur_read_result <= 0;
-            working <= 0;
+            working <= 1;
             is_if <= 1;
         end else if (rdy_in) begin
             case(state)

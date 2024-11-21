@@ -14,16 +14,22 @@ module decoder(
     input wire inst_ready,
     input wire [31:0] inst, // current instruction
 
+    // to reg
+    output reg reg_issue_ready,
+    output reg [4:0] reg_rd,
+    output wire [`ROB_WIDTH-1:0] reg_rob_id,
+
     // from rob
     input wire rob_full,
     input wire [`ROB_WIDTH-1:0] empty_rob_id,
-    input wire [31:0] corr_inst_addr, // pc_bus
+    input wire [31:0] corr_jump_addr, // pc_bus
     // to rob
     output reg rob_issue_ready,
     output reg [31:0] rob_inst_addr,
     output reg [31:0] rob_jump_addr, // next jump addr
     output reg [1:0] rob_type,
     output reg [4:0] rob_rd,
+    output reg [31:0] rob_val,
 
     // from rs
     input wire rs_full,
@@ -99,8 +105,12 @@ module decoder(
     reg rs1_has_dep, rs2_has_dep;
     reg [`ROB_WIDTH-1:0] rs1_dep, rs2_dep;
 
+    reg working;
+
     assign get_reg_1 = rs1;
     assign get_reg_2 = rs2;
+
+    assign reg_rob_id = empty_rob_id;
     
     assign rs_val_j = rs1_val;
     assign rs_val_k = rs2_val;
@@ -118,6 +128,7 @@ module decoder(
     assign lsb_dep_k = rs2_dep;
     assign lsb_rob_id = empty_rob_id;
 
+    assign push_reg_dep = !(op_code == s || op_code == b);
     assign push_rs = !push_lsb;
     assign push_lsb = op_code == l || op_code == s;
     assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
@@ -126,7 +137,7 @@ module decoder(
     assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : inst_addr + 4);
     // always predict jump
 
-    assign if_enable = (inst_ready) && work_enable;
+    assign if_enable = (!working || inst_ready) && work_enable;
     assign if_addr = next_addr;
 
     always @(posedge clk_in) begin: Main
@@ -140,16 +151,22 @@ module decoder(
             rs2_dep <= 0;
             last_inst <= 0;
             inst_addr <= 0;
+            working <= 0;
         end else if (rdy_in && clear) begin
-            freezed <= 0;
+            working <= 0;
+            freezed <= 1;
             // clear will cause memctrl to pause
-            inst_addr <= corr_inst_addr;
+            inst_addr <= corr_jump_addr;
         end else if (inst_ready) begin
+            working <= 1;
+            freezed <= 0;
             inst_addr <= next_addr;
-
+            reg_issue_ready <= push_reg_dep;
             rob_issue_ready <= 1;
             rs_issue_ready <= push_rs;
             lsb_issue_ready <= push_lsb;
+
+            reg_rd <= rd;
 
             rob_inst_addr <= inst_addr;
             rob_jump_addr <= next_addr;

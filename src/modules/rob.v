@@ -4,7 +4,6 @@ module rob(
     input wire rdy_in,  // ready signal, pause cpu when low
 
     output reg clear,
-    output wire rob_empty,
     output wire rob_full,
 
     // issue: from decoder, to regfile
@@ -78,7 +77,7 @@ module rob(
     assign search_ready_2 = status[search_rob_id_2] == WR;
     assign search_val_1 = inst_val[search_rob_id_1];
     assign search_val_2 = inst_val[search_rob_id_2];
-    assign rob_empty = head == tail;
+    wire rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
     assign melt = !has_jalr;
@@ -95,6 +94,7 @@ module rob(
                 inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
             end
+            clear <= 0; // clear only appears for 1 cycle
         end else if (rdy_in) begin
             // update
             if(dec_ready) begin

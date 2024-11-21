@@ -34,12 +34,17 @@ module cpu(
     wire mem2dec_if_ready;
     wire [31:0] mem2dec_inst;
 
-    memctrl mc(
+    wire clear;
+    wire rob_full, rs_full, lsb_full;
+
+    
+
+    memctrl mc0(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .rdy_in(rdy_in),
 
-        .clear(1'b0),
+        .clear(clear),
 
         .mem_din(mem_din),
         .mem_dout(mem_dout),
@@ -62,12 +67,50 @@ module cpu(
         .load_val()
     );
 
-    decoder dec(
+    
+    // dec reg
+    wire [4:0] dec2reg_get_reg_1;
+    wire [4:0] dec2reg_get_reg_2;
+    wire reg2dec_has_dep_1;
+    wire reg2dec_has_dep_2;
+    wire [31:0] reg2dec_val_1;
+    wire [31:0] reg2dec_val_2;
+    wire [`ROB_WIDTH-1:0] reg2dec_dep_1;
+    wire [`ROB_WIDTH-1:0] reg2dec_dep_2;
+
+    wire dec2reg_issue_ready;
+    wire [4:0] dec2reg_rd;
+    wire [`ROB_WIDTH-1:0] dec2reg_rob_id;
+
+    // reg rob
+    wire [`ROB_WIDTH-1:0] reg2rob_search_rob_id_1;
+    wire reg2rob_search_ready_1;
+    wire [31:0] reg2rob_search_val_1;
+    wire [`ROB_WIDTH-1:0] reg2rob_search_rob_id_2;
+    wire reg2rob_search_ready_2;
+    wire [31:0] reg2rob_search_val_2;
+    wire [`ROB_WIDTH-1:0] rob2reg_commit_rob_id;
+    wire [4:0] rob2reg_commit_reg_id;
+    wire [31:0] rob2reg_commit_val;
+
+
+    // dec rob
+    wire [`ROB_WIDTH-1:0] rob2dec_empty_rob_id;
+    wire dec2rob_issue_ready;
+    wire [31:0] dec2rob_addr;
+    wire [31:0] dec2rob_j_addr;
+    wire [1:0] dec2rob_type;
+    wire [4:0] dec2rob_rd;
+    wire [31:0] dec2rob_val;
+    wire rob2dec_melt;
+    wire [31:0] rob2dec_corr_jump_addr;
+
+    decoder dec0(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .rdy_in(rdy_in),
 
-        .clear(1'b0),
+        .clear(clear),
 
         .new_inst_addr(32'h0),
         .melt(1'b0),
@@ -77,14 +120,19 @@ module cpu(
         .inst_ready(mem2dec_if_ready),
         .inst(mem2dec_inst),
 
-        .rob_full(1'b0),
-        .empty_rob_id(4'b0),
-        .corr_inst_addr(32'h0),
-        .rob_issue_ready(),
-        .rob_inst_addr(),
-        .rob_jump_addr(),
-        .rob_type(),
-        .rob_rd(),
+        .reg_issue_ready(dec2reg_issue_ready),
+        .reg_rd(dec2reg_rd),
+        .reg_rob_id(dec2reg_rob_id),
+
+        .rob_full(rob_full),
+        .empty_rob_id(rob2dec_empty_rob_id),
+        .corr_jump_addr(rob2dec_corr_jump_addr),
+        .rob_issue_ready(dec2rob_issue_ready),
+        .rob_inst_addr(dec2rob_addr),
+        .rob_jump_addr(dec2rob_j_addr),
+        .rob_type(dec2rob_type),
+        .rob_rd(dec2rob_rd),
+        .rob_val(dec2rob_val),
 
         .rs_full(1'b0),
         .rs_issue_ready(),
@@ -111,15 +159,79 @@ module cpu(
         .lsb_rob_id(),
         .lsb_imm(),
 
-        .get_reg_1(),
-        .get_reg_2(),
-        .get_val_1(),
-        .get_val_2(),
-        .has_dep_1(),
-        .has_dep_2(),
-        .get_dep_1(),
-        .get_dep_2()
+        .get_reg_1(dec2reg_get_reg_1),
+        .get_reg_2(dec2reg_get_reg_2),
+        .get_val_1(reg2dec_val_1),
+        .get_val_2(reg2dec_val_2),
+        .has_dep_1(reg2dec_has_dep_1),
+        .has_dep_2(reg2dec_has_dep_2),
+        .get_dep_1(reg2dec_dep_1),
+        .get_dep_2(reg2dec_dep_2)
+    );
 
+    regfile reg0(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .rdy_in(rdy_in),
+
+        .clear(clear),
+
+        .commit_reg_id(rob2reg_commit_reg_id),
+        .commit_val(rob2reg_commit_val),
+        .commit_rob_id(rob2reg_commit_rob_id),
+
+        .search_rob_id_1(reg2rob_search_rob_id_1),
+        .search_ready_1(reg2rob_search_ready_1),
+        .search_val_1(reg2rob_search_val_1),
+        .search_rob_id_2(reg2rob_search_rob_id_2),
+        .search_ready_2(reg2rob_search_ready_2),
+        .search_val_2(reg2rob_search_val_2),
+
+        .issue_reg_ready(dec2reg_issue_ready),
+        .issue_reg_rd(dec2reg_rd),
+        .issue_rob_id(dec2reg_rob_id),
+
+        .get_reg_1(dec2reg_get_reg_1),
+        .get_val_1(reg2dec_val_1),
+        .has_dep_1(reg2dec_has_dep_1),
+        .get_dep_1(reg2dec_dep_1),
+        .get_reg_2(dec2reg_get_reg_2),
+        .get_val_2(reg2dec_val_2),
+        .has_dep_2(reg2dec_has_dep_2),
+        .get_dep_2(reg2dec_dep_2)
+
+    );
+
+
+    rob rob0(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .rdy_in(rdy_in),
+
+        .clear(clear),
+        .rob_full(rob_full),
+        .empty_rob_id(rob2dec_empty_rob_id),
+
+        .dec_ready(),
+        .addr(dec2rob_addr),
+        .j_addr(dec2rob_j_addr),
+        .type(dec2rob_type),
+        .rd(dec2rob_rd),
+        .val(dec2rob_val),
+
+        .melt(rob2dec_melt),
+        .corr_jump_addr(rob2dec_corr_jump_addr),
+
+        .commit_reg_id(rob2reg_commit_reg_id),
+        .commit_val(rob2reg_commit_val),
+        .commit_rob_id(rob2reg_commit_rob_id),
+
+        .search_rob_id_1(reg2rob_search_rob_id_1),
+        .search_rob_id_2(reg2rob_search_rob_id_2),
+        .search_ready_1(reg2rob_search_ready_1),
+        .search_ready_2(reg2rob_search_ready_2),
+        .search_val_1(reg2rob_search_val_1),
+        .search_val_2(reg2rob_search_val_2)
 
     );
 

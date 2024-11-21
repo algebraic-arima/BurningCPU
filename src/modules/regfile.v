@@ -18,8 +18,9 @@ module regfile(
     input wire search_ready_2,
     input wire [31:0] search_val_2,
 
-    // from issue
-    input wire [4:0]  issue_reg_id,
+    // from decoder issue
+    input wire issue_reg_ready,
+    input wire [4:0]  issue_reg_rd,
     input wire [`ROB_WIDTH-1:0] issue_rob_id,
 
     // to decoder, search reg val and dep
@@ -65,21 +66,21 @@ module regfile(
             if (commit_reg_id != 0) begin
                 val[commit_reg_id] <= commit_val;
             end
-            if (issue_reg_id != 0 && commit_reg_id != 0) begin
-                if (commit_reg_id == issue_reg_id) begin
-                    dep[issue_reg_id] <= issue_rob_id;
-                    has_dep[issue_reg_id] <= 1;
+            if (issue_reg_rd != 0 && commit_reg_id != 0) begin
+                if (commit_reg_id == issue_reg_rd) begin
+                    dep[issue_reg_rd] <= issue_rob_id;
+                    has_dep[issue_reg_rd] <= 1;
                 end else begin
-                    dep[issue_reg_id] <= issue_rob_id;
-                    has_dep[issue_reg_id] <= 1;
+                    dep[issue_reg_rd] <= issue_rob_id;
+                    has_dep[issue_reg_rd] <= 1;
                     if (has_dep[commit_reg_id] && dep[commit_reg_id] == commit_rob_id) begin
                         dep[commit_reg_id] <= 0;
                         has_dep[commit_reg_id] <= 0;
                     end
                 end
-            end else if (issue_reg_id != 0) begin
-                dep[issue_reg_id] <= issue_rob_id;
-                has_dep[issue_reg_id] <= 1;
+            end else if (issue_reg_rd != 0) begin
+                dep[issue_reg_rd] <= issue_rob_id;
+                has_dep[issue_reg_rd] <= 1;
             end else if (commit_reg_id != 0) begin
                 if (has_dep[commit_reg_id] && dep[commit_reg_id] == commit_rob_id) begin
                     dep[commit_reg_id] <= 0;
