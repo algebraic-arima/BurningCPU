@@ -151,9 +151,11 @@ module decoder(
             rs2_dep <= 0;
             last_inst <= 0;
             inst_addr <= 0;
+            rob_issue_ready <= 0;
             working <= 0;
         end else if (rdy_in && clear) begin
             working <= 0;
+            rob_issue_ready <= 0;
             freezed <= 1;
             // clear will cause memctrl to pause
             inst_addr <= corr_jump_addr;
@@ -198,6 +200,11 @@ module decoder(
             if (op_code == s) begin
                 lsb_imm <= imm_s;
             end
+        end else begin
+            reg_issue_ready <= 0;
+            rob_issue_ready <= 0;
+            rs_issue_ready <= 0;
+            lsb_issue_ready <= 0;
         end
     end
 

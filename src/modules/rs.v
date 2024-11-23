@@ -61,23 +61,28 @@ module rs (
 
     genvar i;
     generate 
-        wire fcalc_enable [`RS_SIZE-1:0];
-        wire [`RS_WIDTH-1:0] fpos_calc [`RS_SIZE-1:0];
-        wire fhas_idle [`RS_SIZE-1:0];
-        wire [`RS_WIDTH-1:0] fpos_idle [`RS_SIZE-1:0];
+        wire tmp_calc_enable[0:2*`RS_SIZE-1];
+        wire tmp_is_idle[0:2*`RS_SIZE-1];
+        wire [`RS_WIDTH-1:0] tmp_pos_calc[0:2*`RS_SIZE-1];
+        wire [`RS_WIDTH-1:0] tmp_pos_idle[0:2*`RS_SIZE-1];
         for (i = 0; i < `RS_SIZE; i = i + 1) begin
             assign calc[i] = busy[i] && (!dj[i] && !dk[i]);
-            if (i != 0) begin
-                assign fcalc_enable[i] = calc[i] || fcalc_enable[i-1];
-                assign fpos_calc[i] = fcalc_enable[i] ? i : fpos_calc[i-1];
-                assign fhas_idle[i] = !busy[i] && fhas_idle[i-1];
-                assign fpos_idle[i] = fhas_idle[i] ? i : fpos_idle[i-1];
+            assign tmp_calc_enable[i + `RS_SIZE] = calc[i];
+            assign tmp_is_idle[i + `RS_SIZE] = !busy[i];
+            assign tmp_pos_calc[i + `RS_SIZE] = i;
+            assign tmp_pos_idle[i + `RS_SIZE] = i;
+            if(i != 0) begin
+                assign tmp_calc_enable[i] = tmp_calc_enable[i << 1] || tmp_calc_enable[i << 1 | 1];
+                assign tmp_is_idle[i] = tmp_is_idle[i << 1] || tmp_is_idle[i << 1 | 1];
+                assign tmp_pos_calc[i] = tmp_calc_enable[i << 1] ? tmp_pos_calc[i << 1] : tmp_pos_calc[i << 1 | 1];
+                assign tmp_pos_idle[i] = tmp_is_idle[i << 1] ? tmp_pos_idle[i << 1] : tmp_pos_idle[i << 1 | 1];
             end
         end
-        assign calc_enable = fcalc_enable[`RS_SIZE-1];
-        assign pos_calc = fpos_calc[`RS_SIZE-1];
-        assign has_idle = fhas_idle[`RS_SIZE-1];
-        assign pos_idle = fpos_idle[`RS_SIZE-1];
+        assign calc_enable = tmp_calc_enable[1];
+        assign pos_calc = tmp_pos_calc[1];
+        assign pos_idle = tmp_pos_idle[1];
+        assign has_idle = tmp_is_idle[1];
+        assign rs_full = !has_idle;
     endgenerate
 
     alu alu0(

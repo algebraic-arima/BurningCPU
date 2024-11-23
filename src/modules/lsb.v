@@ -42,10 +42,10 @@ module lsb(
     input wire store_enable,
 
     // to memctrl
-    output wire re,
-    output wire we,
-    output wire [31:0] addr,
-    output wire [31:0] store_val,
+    output reg re,
+    output reg we,
+    output reg [31:0] addr,
+    output reg [31:0] store_val,
     input wire ls_finished,
     input wire [31:0] read_val,
 
@@ -70,6 +70,7 @@ module lsb(
     reg [31:0] a[0:`LSB_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`LSB_SIZE-1]; // which rob depends on this
     reg val_ready [0:`LSB_SIZE-1];
+    reg working;
 
     assign lsb_full = head == tail + 1 || head == 0 && tail == `LSB_SIZE - 1;
 
@@ -118,9 +119,31 @@ module lsb(
             end
             // issue
             if (dec_ready) begin
-                
+                busy[tail] <= 1;
+                is_write[tail] <= type[3];
+                inst_op[tail] <= type;
+                vj[tail] <= val_j;
+                vk[tail] <= val_k;
+                dj[tail] <= has_dep_j && !(rs_ready && dep_j == rs_rob_id) && !(lsb_ready && dep_j == lsb_rob_id);
+                dk[tail] <= has_dep_k && !(rs_ready && dep_k == rs_rob_id) && !(lsb_ready && dep_k == lsb_rob_id);
+                qj[tail] <= dep_j;
+                qk[tail] <= dep_k;
+                a[tail] <= imm;
+                rob_dest[tail] <= rob_id;
+                val_ready[tail] <= 0;
+                tail <= tail + 1;
             end
             // read from ram
+            if ((!working || ls_finished) && busy[head] && dj[head] == 0 && dk[head] == 0 && !val_ready[head]) begin
+                re <= 1;
+                we <= 0;
+                addr <= a[head];
+                store_val <= 0;
+
+            end
+            if (!working) begin
+                working <= 1;
+            end
         end
     end
 

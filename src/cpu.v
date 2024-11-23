@@ -105,6 +105,41 @@ module cpu(
     wire rob2dec_melt;
     wire [31:0] rob2dec_corr_jump_addr;
 
+    // dec rs
+    wire dec2rs_issue_ready;
+    wire [4:0] dec2rs_type;
+    wire [31:0] dec2rs_val_j;
+    wire [31:0] dec2rs_val_k;
+    wire dec2rs_has_dep_j;
+    wire dec2rs_has_dep_k;
+    wire [`ROB_WIDTH-1:0] dec2rs_dep_j;
+    wire [`ROB_WIDTH-1:0] dec2rs_dep_k;
+    wire [`ROB_WIDTH-1:0] dec2rs_rob_id;
+    wire [31:0] dec2rs_true_jump_addr;
+    wire [31:0] dec2rs_false_jump_addr;
+
+    // rs broadcast
+    wire rs_broadcast_ready;
+    wire [`ROB_WIDTH-1:0] rs_broadcast_rob_id;
+    wire [31:0] rs_broadcast_value; 
+
+    // dec lsb
+    wire dec2lsb_issue_ready;
+    wire [3:0] dec2lsb_type;
+    wire [31:0] dec2lsb_val_j;
+    wire [31:0] dec2lsb_val_k;
+    wire dec2lsb_has_dep_j;
+    wire dec2lsb_has_dep_k;
+    wire [`ROB_WIDTH-1:0] dec2lsb_dep_j;
+    wire [`ROB_WIDTH-1:0] dec2lsb_dep_k;
+    wire [`ROB_WIDTH-1:0] dec2lsb_rob_id;
+    wire [31:0] dec2lsb_imm;
+    
+    // lsb broadcast
+    wire lsb_broadcast_ready;
+    wire [`ROB_WIDTH-1:0] lsb_broadcast_rob_id;
+    wire [31:0] lsb_broadcast_value;
+
     decoder dec0(
         .clk_in(clk_in),
         .rst_in(rst_in),
@@ -134,18 +169,18 @@ module cpu(
         .rob_rd(dec2rob_rd),
         .rob_val(dec2rob_val),
 
-        .rs_full(1'b0),
-        .rs_issue_ready(),
-        .rs_type(),
-        .rs_val_j(),
-        .rs_val_k(),
-        .rs_has_dep_j(),
-        .rs_has_dep_k(),
-        .rs_dep_j(),
-        .rs_dep_k(),
-        .rs_rob_id(),
-        .rs_true_addr(),
-        .rs_false_addr(),
+        .rs_full(rs_full),
+        .rs_issue_ready(dec2rs_issue_ready),
+        .rs_type(dec2rs_type),
+        .rs_val_j(dec2rs_val_j),
+        .rs_val_k(dec2rs_val_k),
+        .rs_has_dep_j(dec2rs_has_dep_j),
+        .rs_has_dep_k(dec2rs_has_dep_k),
+        .rs_dep_j(dec2rs_dep_j),
+        .rs_dep_k(dec2rs_dep_k),
+        .rs_rob_id(dec2rs_rob_id),
+        .rs_true_addr(dec2rs_true_jump_addr),
+        .rs_false_addr(dec2rs_false_jump_addr),
 
         .lsb_full(1'b0),
         .lsb_issue_ready(),
@@ -212,7 +247,7 @@ module cpu(
         .rob_full(rob_full),
         .empty_rob_id(rob2dec_empty_rob_id),
 
-        .dec_ready(),
+        .dec_ready(dec2rob_issue_ready),
         .addr(dec2rob_addr),
         .j_addr(dec2rob_j_addr),
         .type(dec2rob_type),
@@ -232,6 +267,83 @@ module cpu(
         .search_ready_2(reg2rob_search_ready_2),
         .search_val_1(reg2rob_search_val_1),
         .search_val_2(reg2rob_search_val_2)
+
+    );
+
+    rs rs0(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .rdy_in(rdy_in),
+
+        .rs_full(rs_full),
+
+        .clear(clear),
+
+        .dec_ready(dec2rs_issue_ready),
+        .type(dec2rs_type),
+        .val_j(dec2rs_val_j),
+        .val_k(dec2rs_val_k),
+        .has_dep_j(dec2rs_has_dep_j),
+        .has_dep_k(dec2rs_has_dep_k),
+        .dep_j(dec2rs_dep_j),
+        .dep_k(dec2rs_dep_k),
+        .rob_id(dec2rs_rob_id),
+        .tja(dec2rs_true_jump_addr),
+        .fja(dec2rs_false_jump_addr),
+
+        .rs_ready(rs_broadcast_ready),
+        .rs_rob_id(rs_broadcast_rob_id),
+        .rs_value(rs_broadcast_value),
+
+        .lsb_ready(lsb_broadcast_ready),
+        .lsb_rob_id(lsb_broadcast_rob_id),
+        .lsb_value(lsb_broadcast_value),
+
+        .ready(rs_broadcast_ready),
+        .dest_rob_id(rs_broadcast_rob_id),
+        .value(rs_broadcast_value)
+    );
+
+    lsb lsb0(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .rdy_in(rdy_in),
+
+        .lsb_full(lsb_full),
+
+        .clear(clear),
+
+        .dec_ready(dec2lsb_issue_ready),
+        .type(dec2lsb_type),
+        .val_j(dec2lsb_val_j),
+        .val_k(dec2lsb_val_k),
+        .has_dep_j(dec2lsb_has_dep_j),
+        .has_dep_k(dec2lsb_has_dep_k),
+        .dep_j(dec2lsb_dep_j),
+        .dep_k(dec2lsb_dep_k),
+        .rob_id(dec2lsb_rob_id),
+        .imm(dec2lsb_imm),
+
+        .rs_ready(rs_broadcast_ready),
+        .rs_rob_id(rs_broadcast_rob_id),
+        .rs_value(rs_broadcast_value),
+
+        .lsb_ready(lsb_broadcast_ready),
+        .lsb_rob_id(lsb_broadcast_rob_id),
+        .lsb_value(lsb_broadcast_value),
+
+        .store_enable(1'b0),
+
+        .re(),
+        .we(),
+        .addr(),
+        .store_val(),
+        .ls_finished(),
+        .read_val(),
+
+        .ready(lsb_broadcast_ready),
+        .dest_rob_id(lsb_broadcast_rob_id),
+        .value(lsb_broadcast_value)
 
     );
 
