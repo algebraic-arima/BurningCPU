@@ -140,6 +140,9 @@ module cpu(
     wire [`ROB_WIDTH-1:0] lsb_broadcast_rob_id;
     wire [31:0] lsb_broadcast_value;
 
+    // rob lsb
+    wire rob2lsb_store_enable;
+
     decoder dec0(
         .clk_in(clk_in),
         .rst_in(rst_in),
@@ -182,17 +185,17 @@ module cpu(
         .rs_true_addr(dec2rs_true_jump_addr),
         .rs_false_addr(dec2rs_false_jump_addr),
 
-        .lsb_full(1'b0),
-        .lsb_issue_ready(),
-        .lsb_type(),
-        .lsb_val_j(),
-        .lsb_val_k(),
-        .lsb_has_dep_j(),
-        .lsb_has_dep_k(),
-        .lsb_dep_j(),
-        .lsb_dep_k(),
-        .lsb_rob_id(),
-        .lsb_imm(),
+        .lsb_full(lsb_full),
+        .lsb_issue_ready(dec2lsb_issue_ready),
+        .lsb_type(dec2lsb_type),
+        .lsb_val_j(dec2lsb_val_j),
+        .lsb_val_k(dec2lsb_val_k),
+        .lsb_has_dep_j(dec2lsb_has_dep_j),
+        .lsb_has_dep_k(dec2lsb_has_dep_k),
+        .lsb_dep_j(dec2lsb_dep_j),
+        .lsb_dep_k(dec2lsb_dep_k),
+        .lsb_rob_id(dec2lsb_rob_id),
+        .lsb_imm(dec2lsb_imm),
 
         .get_reg_1(dec2reg_get_reg_1),
         .get_reg_2(dec2reg_get_reg_2),
@@ -256,6 +259,16 @@ module cpu(
 
         .melt(rob2dec_melt),
         .corr_jump_addr(rob2dec_corr_jump_addr),
+
+        .rs_ready(rs_broadcast_ready),
+        .rs_rob_id(rs_broadcast_rob_id),
+        .rs_value(rs_broadcast_value),
+
+        .lsb_ready(lsb_broadcast_ready),
+        .lsb_rob_id(lsb_broadcast_rob_id),
+        .lsb_value(lsb_broadcast_value),
+
+        .store_enable(rob2lsb_store_enable),
 
         .commit_reg_id(rob2reg_commit_reg_id),
         .commit_val(rob2reg_commit_val),
@@ -332,7 +345,7 @@ module cpu(
         .lsb_rob_id(lsb_broadcast_rob_id),
         .lsb_value(lsb_broadcast_value),
 
-        .store_enable(1'b0),
+        .store_enable(rob2lsb_store_enable),
 
         .re(),
         .we(),

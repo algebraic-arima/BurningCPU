@@ -102,10 +102,11 @@ module rs (
         .false_jaddr(false_jaddr[pos_calc]),
 
         .ready(ready),
-        .rob_id(dest_rob_id),
         .value(value)
         
     );
+
+    assign dest_rob_id = rob_dest[pos_calc];
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -160,6 +161,9 @@ module rs (
                 rob_dest[pos_idle] <= rob_id;
                 true_jaddr[pos_idle] <= tja;
                 false_jaddr[pos_idle] <= fja;
+            end
+            if (calc_enable) begin
+                busy[pos_calc] <= 0;
             end
         end
     end

@@ -87,6 +87,7 @@ module rob(
         if (rst_in || (clear && rdy_in)) begin
             head <= 0;
             tail <= 0;
+            store_enable <= 0;
             for (i = 0; i < `ROB_SIZE; i = i + 1) begin
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
