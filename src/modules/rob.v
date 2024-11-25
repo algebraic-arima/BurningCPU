@@ -18,7 +18,7 @@ module rob(
     // to decoder: freeze
     output wire melt,
     // to decoder: predict false
-    output reg [31:0] corr_jump_addr,
+    output wire [31:0] corr_jump_addr,
 
 
     // from rs
@@ -35,6 +35,7 @@ module rob(
     output reg store_enable,
 
     // commit to regfile
+    output reg commit_ready,
     output reg [`ROB_WIDTH-1:0] commit_rob_id,
     output reg [4:0] commit_reg_id,
     output reg [31:0] commit_val,
@@ -46,7 +47,6 @@ module rob(
     input wire [`ROB_WIDTH-1:0] search_rob_id_2,
     output wire search_ready_2,
     output wire [31:0] search_val_2
-
 
 );
 
@@ -81,6 +81,7 @@ module rob(
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
     assign melt = !has_jalr;
+    assign corr_jump_addr = inst_val[head];
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -88,6 +89,11 @@ module rob(
             head <= 0;
             tail <= 0;
             store_enable <= 0;
+            commit_ready <= 0;
+            commit_reg_id <= 0;
+            commit_rob_id <= 0;
+            commit_val <= 0; 
+
             for (i = 0; i < `ROB_SIZE; i = i + 1) begin
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
@@ -131,7 +137,6 @@ module rob(
                 if (inst_type[head] == BR) begin
                     if (inst_val[head] != jump_addr[head]) begin
                         clear <= 1;
-                        corr_jump_addr <= inst_val[head];
                     end
                 end else if (inst_type[head] == ST) begin
                 end else begin
@@ -150,6 +155,5 @@ module rob(
             end
         end
     end
-
 
 endmodule

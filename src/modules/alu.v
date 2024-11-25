@@ -35,6 +35,7 @@ module alu(
     input wire [31:0] false_jaddr,
     
     output reg ready,
+    output reg [`ROB_WIDTH-1:0] rob_id,
     output reg [31 : 0] value
 
 );   
@@ -63,11 +64,15 @@ module alu(
         if(rst_in | (rdy_in & clear)) begin
             ready <= 1'b0;
             value <= 32'b0;
+            rob_id <= 0;
         end else if (rdy_in & calc_enable) begin
             ready <= 1'b1;
             value <= calc[op];
+            rob_id <= rob_dep;
         end else begin
             ready <= 1'b0;
+            value <= 32'b0;
+            rob_id <= 0;
         end
     end
 

@@ -6,6 +6,7 @@ module regfile(
     input wire clear,
 
     // from rob commit
+    input wire commit_ready,
     input wire [4:0]  commit_reg_id,
     input wire [31:0] commit_val,
     input wire [`ROB_WIDTH-1:0] commit_rob_id,

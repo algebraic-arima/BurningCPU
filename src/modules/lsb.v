@@ -19,14 +19,14 @@ module lsb(
     // from decoder
     input wire dec_ready,
     input wire [3:0] type,
-    input wire [31:0] val_j, // store val
-    input wire [31:0] val_k, // store/load addr
+    input wire [31:0] val_j, // store val / load base addr reg
+    input wire [31:0] val_k, // store addr / load imm
     input wire has_dep_j,
     input wire has_dep_k,
     input wire [`ROB_WIDTH-1:0] dep_j,
     input wire [`ROB_WIDTH-1:0] dep_k,
     input wire [`ROB_WIDTH-1:0] rob_id,
-    input wire [31:0] imm, // offset
+    input wire [31:0] imm, // store imm
 
     // from rs
     input wire rs_ready,
@@ -93,6 +93,7 @@ module lsb(
             end
             head <= 0;
             tail <= 0;
+            working <= 0;
         end else if (rdy_in) begin
             // update dependence
             for (i = 0; i < `ROB_SIZE; ++i) begin
@@ -139,7 +140,6 @@ module lsb(
                 we <= 0;
                 addr <= a[head];
                 store_val <= 0;
-
             end
             if (!working) begin
                 working <= 1;

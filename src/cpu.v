@@ -89,6 +89,7 @@ module cpu(
     wire [`ROB_WIDTH-1:0] reg2rob_search_rob_id_2;
     wire reg2rob_search_ready_2;
     wire [31:0] reg2rob_search_val_2;
+    wire rob2reg_commit_ready;
     wire [`ROB_WIDTH-1:0] rob2reg_commit_rob_id;
     wire [4:0] rob2reg_commit_reg_id;
     wire [31:0] rob2reg_commit_val;
@@ -214,6 +215,7 @@ module cpu(
 
         .clear(clear),
 
+        .commit_ready(rob2reg_commit_ready),
         .commit_reg_id(rob2reg_commit_reg_id),
         .commit_val(rob2reg_commit_val),
         .commit_rob_id(rob2reg_commit_rob_id),
@@ -270,6 +272,7 @@ module cpu(
 
         .store_enable(rob2lsb_store_enable),
 
+        .commit_ready(rob2reg_commit_ready),
         .commit_reg_id(rob2reg_commit_reg_id),
         .commit_val(rob2reg_commit_val),
         .commit_rob_id(rob2reg_commit_rob_id),

@@ -58,7 +58,7 @@ module decoder(
     output wire [`ROB_WIDTH-1:0] lsb_dep_j,
     output wire [`ROB_WIDTH-1:0] lsb_dep_k,
     output wire [`ROB_WIDTH-1:0] lsb_rob_id,
-    output reg [31:0] lsb_imm,
+    output reg [31:0] lsb_imm,  // only for store
 
     // search regfile
     output wire [4:0] get_reg_1,
