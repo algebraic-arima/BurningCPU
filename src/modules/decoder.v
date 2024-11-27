@@ -29,7 +29,6 @@ module decoder(
     output reg [31:0] rob_jump_addr, // next jump addr
     output reg [1:0] rob_type,
     output reg [4:0] rob_rd,
-    output reg [31:0] rob_val,
 
     // from rs
     input wire rs_full,
@@ -89,14 +88,14 @@ module decoder(
 
     wire [6:0] op_code = inst[6:0];
     wire [4:0] rd = inst[11:7];
-    wire [3:0] op_type = inst[14:12];
+    wire [2:0] op_type = inst[14:12];
     wire [4:0] rs1 = inst[19:15];
     wire [4:0] rs2 = inst[24:20];
     wire [31:0] imm_u = {inst[31:12], 12'b0};
-    wire [20:0] imm_j = {inst[31], inst[19:12], inst[20], inst[30:21], 1'b0};
-    wire [11:0] imm_i = inst[31:20];
-    wire [12:0] imm_b = {inst[31], inst[7], inst[30:25], inst[11:8], 1'b0};
-    wire [11:0] imm_s = {inst[31:25], inst[11:7]};
+    wire [31:0] imm_j = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
+    wire [31:0] imm_i = {{20{inst[31]}}, inst[31:20]};
+    wire [31:0] imm_b = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+    wire [31:0] imm_s = {{20{inst[31]}}, inst[31:25], inst[11:7]};
 
     wire push_rs, push_lsb;
 
@@ -152,6 +151,10 @@ module decoder(
             last_inst <= 0;
             inst_addr <= 0;
             rob_issue_ready <= 0;
+            reg_issue_ready <= 0;
+            rs_issue_ready <= 0;
+            lsb_issue_ready <= 0;
+            lsb_imm <= 0;
             working <= 0;
         end else if (rdy_in && clear) begin
             working <= 0;
@@ -196,9 +199,14 @@ module decoder(
             if (op_code == b) begin
                 rs_true_addr <= inst_addr + imm_b;
                 rs_false_addr <= inst_addr + 4;
+            end else begin
+                rs_true_addr <= 0;
+                rs_false_addr <= 0;
             end
             if (op_code == s) begin
                 lsb_imm <= imm_s;
+            end else begin
+                lsb_imm <= 0;
             end
         end else begin
             reg_issue_ready <= 0;

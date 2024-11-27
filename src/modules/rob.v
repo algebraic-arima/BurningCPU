@@ -13,7 +13,6 @@ module rob(
     input wire [31:0] j_addr,
     input wire [1:0] type,
     input wire [4:0] rd,
-    input wire [31:0] val,
 
     // to decoder: freeze
     output wire melt,
@@ -50,8 +49,8 @@ module rob(
 
 );
 
-    localparam IS = 2'b00;
-    localparam WR = 2'b01;
+    localparam IS = 2'b01;
+    localparam WR = 2'b10;
     localparam CO = 2'b11;
 
     localparam BR = 2'b00;
@@ -73,10 +72,10 @@ module rob(
 
     reg has_jalr;
 
-    assign search_ready_1 = status[search_rob_id_1] == WR;
-    assign search_ready_2 = status[search_rob_id_2] == WR;
-    assign search_val_1 = inst_val[search_rob_id_1];
-    assign search_val_2 = inst_val[search_rob_id_2];
+    assign search_ready_1 = (rs_ready && rs_rob_id == search_rob_id_1) || (lsb_ready && lsb_rob_id == search_rob_id_1) || busy[search_rob_id_1] && status[search_rob_id_1] == WR;
+    assign search_ready_2 = (rs_ready && rs_rob_id == search_rob_id_2) || (lsb_ready && lsb_rob_id == search_rob_id_2) || busy[search_rob_id_2] && status[search_rob_id_2] == WR;
+    assign search_val_1 = (rs_ready && rs_rob_id == search_rob_id_1) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_1) ? lsb_value : inst_val[search_rob_id_1];
+    assign search_val_2 = (rs_ready && rs_rob_id == search_rob_id_2) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_2) ? lsb_value : inst_val[search_rob_id_2];
     wire rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
@@ -100,6 +99,7 @@ module rob(
                 inst_val[i] <= 0;
                 inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
+                status[i] <= 0;
             end
             clear <= 0; // clear only appears for 1 cycle
         end else if (rdy_in) begin
@@ -115,7 +115,7 @@ module rob(
                 end
                 busy[tail] <= 1;
                 inst_rd[tail] <= rd;
-                inst_val[tail] <= val;
+                inst_val[tail] <= 0;
                 inst_addr[tail] <= addr;
                 jump_addr[tail] <= j_addr;
                 inst_type[tail] <= type;
@@ -132,6 +132,7 @@ module rob(
             end
             // commit
             if (busy[head] && (status[head] == CO || status[head] == WR)) begin
+                commit_ready <= 1;
                 head <= head + 1;
                 busy[head] <= 0;
                 if (inst_type[head] == BR) begin
@@ -152,8 +153,44 @@ module rob(
                 if (inst_type[head] == JALR) begin
                     has_jalr <= 0;
                 end
+            end else begin
+                commit_ready <= 0;
             end
         end
     end
+
+    wire [31:0] val0 = inst_val[0];
+    wire [31:0] val1 = inst_val[1];
+    wire [31:0] val2 = inst_val[2];
+    wire [31:0] val3 = inst_val[3];
+    wire [31:0] val4 = inst_val[4];
+    wire [31:0] val5 = inst_val[5];
+    wire [31:0] val6 = inst_val[6];
+    wire [31:0] val7 = inst_val[7];
+    wire [31:0] val8 = inst_val[8];
+    wire [31:0] val9 = inst_val[9];
+    wire [31:0] val10 = inst_val[10];
+    wire [31:0] val11 = inst_val[11];
+    wire [31:0] val12 = inst_val[12];
+    wire [31:0] val13 = inst_val[13];
+    wire [31:0] val14 = inst_val[14];
+    wire [31:0] val15 = inst_val[15];
+
+    wire [1:0] status0 = status[0];
+    wire [1:0] status1 = status[1];
+    wire [1:0] status2 = status[2];
+    wire [1:0] status3 = status[3];
+    wire [1:0] status4 = status[4];
+    wire [1:0] status5 = status[5];
+    wire [1:0] status6 = status[6];
+    wire [1:0] status7 = status[7];
+    wire [1:0] status8 = status[8];
+    wire [1:0] status9 = status[9];
+    wire [1:0] status10 = status[10];
+    wire [1:0] status11 = status[11];
+    wire [1:0] status12 = status[12];
+    wire [1:0] status13 = status[13];
+    wire [1:0] status14 = status[14];
+    wire [1:0] status15 = status[15];
 
 endmodule

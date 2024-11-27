@@ -28,16 +28,23 @@ module cpu(
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
 
+    
+    wire clear;
+    wire rob_full, rs_full, lsb_full;
 
+    // mem dec
     wire dec2mem_if_enable;
     wire [31:0] dec2mem_if_addr;
     wire mem2dec_if_ready;
     wire [31:0] mem2dec_inst;
 
-    wire clear;
-    wire rob_full, rs_full, lsb_full;
-
-    
+    // mem lsb
+    wire lsb2mem_ls_enable;
+    wire [31:0] lsb2mem_ls_addr;
+    wire [31:0] lsb2mem_store_val;
+    wire [3:0] lsb2mem_lsb_type;
+    wire mem2lsb_ls_finished;
+    wire [31:0] mem2lsb_load_val;
 
     memctrl mc0(
         .clk_in(clk_in),
@@ -58,13 +65,12 @@ module cpu(
         .if_ready(mem2dec_if_ready),
         .inst(mem2dec_inst),
 
-        .ls_enable(1'b0),
-        .is_write(1'b0),
-        .ls_addr(32'h0),
-        .store_val(32'h0),
-        .lsb_type(4'b1111),
-        .ls_finished(),
-        .load_val()
+        .ls_enable(lsb2mem_ls_enable),
+        .ls_addr(lsb2mem_ls_addr),
+        .store_val(lsb2mem_store_val),
+        .lsb_type(lsb2mem_lsb_type),
+        .ls_finished(mem2lsb_ls_finished),
+        .load_val(mem2lsb_load_val)
     );
 
     
@@ -102,7 +108,6 @@ module cpu(
     wire [31:0] dec2rob_j_addr;
     wire [1:0] dec2rob_type;
     wire [4:0] dec2rob_rd;
-    wire [31:0] dec2rob_val;
     wire rob2dec_melt;
     wire [31:0] rob2dec_corr_jump_addr;
 
@@ -171,7 +176,6 @@ module cpu(
         .rob_jump_addr(dec2rob_j_addr),
         .rob_type(dec2rob_type),
         .rob_rd(dec2rob_rd),
-        .rob_val(dec2rob_val),
 
         .rs_full(rs_full),
         .rs_issue_ready(dec2rs_issue_ready),
@@ -257,7 +261,6 @@ module cpu(
         .j_addr(dec2rob_j_addr),
         .type(dec2rob_type),
         .rd(dec2rob_rd),
-        .val(dec2rob_val),
 
         .melt(rob2dec_melt),
         .corr_jump_addr(rob2dec_corr_jump_addr),
@@ -350,12 +353,12 @@ module cpu(
 
         .store_enable(rob2lsb_store_enable),
 
-        .re(),
-        .we(),
-        .addr(),
-        .store_val(),
-        .ls_finished(),
-        .read_val(),
+        .ls_enable(lsb2mem_ls_enable),
+        .addr(lsb2mem_ls_addr),
+        .store_val(lsb2mem_store_val),
+        .lsb_type(lsb2mem_lsb_type),
+        .ls_finished(mem2lsb_ls_finished),
+        .load_val(mem2lsb_load_val),
 
         .ready(lsb_broadcast_ready),
         .dest_rob_id(lsb_broadcast_rob_id),
