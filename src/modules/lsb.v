@@ -169,6 +169,7 @@ module lsb(
                 end else begin
                     value <= load_val;
                 end
+                ls_enable <= 0;
             end
         end
     end
