@@ -74,6 +74,11 @@ module lsb(
     assign lsb_full = head == tail + 1 || head == 0 && tail == `LSB_SIZE - 1;
     wire lsb_empty = head == tail;
 
+    wire ls_e = type[head][3] ? (val_ready[head] && !dj[head] && !dk[head]) : (!dj[head] && !dk[head]);
+    wire [31:0] ls_a = type[head][3] ? (vj[head] + a[head]) : (vj[head] + vk[head]);
+    wire [3:0] ls_t = type[head];
+    wire [31:0] st_val = type[head][3] ? vk[head] : 0;
+
     always @(posedge clk_in) begin: Main
         integer i;
         if (rst_in || (clear && rdy_in)) begin
@@ -113,11 +118,11 @@ module lsb(
                     end
                 end
                 if (busy[i] && lsb_ready) begin
-                    if(dj[i] && qj[i] == lsb_rob_id) begin
+                    if (dj[i] && qj[i] == lsb_rob_id) begin
                         vj[i] <= lsb_value;
                         dj[i] <= 0;
                     end
-                    if(dk[i] && qk[i] == lsb_rob_id) begin
+                    if (dk[i] && qk[i] == lsb_rob_id) begin
                         vk[i] <= lsb_value;
                         dk[i] <= 0;
                     end
@@ -222,5 +227,13 @@ module lsb(
     wire [`ROB_WIDTH-1:0] qk5 = qk[5];
     wire [`ROB_WIDTH-1:0] qk6 = qk[6];
     wire [`ROB_WIDTH-1:0] qk7 = qk[7];
+    wire [31:0] a0 = a[0];
+    wire [31:0] a1 = a[1];
+    wire [31:0] a2 = a[2];
+    wire [31:0] a3 = a[3];
+    wire [31:0] a4 = a[4];
+    wire [31:0] a5 = a[5];
+    wire [31:0] a6 = a[6];
+    wire [31:0] a7 = a[7];
 
 endmodule

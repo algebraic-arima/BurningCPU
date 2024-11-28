@@ -136,7 +136,7 @@ module decoder(
     assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : inst_addr + 4);
     // always predict jump
 
-    assign if_enable = (!working || inst_ready) && work_enable;
+    assign if_enable = (!working || inst_ready) && work_enable || 1'b1;
     assign if_addr = next_addr;
 
     always @(posedge clk_in) begin: Main
@@ -159,7 +159,6 @@ module decoder(
         end else if (rdy_in && clear) begin
             working <= 0;
             rob_issue_ready <= 0;
-            freezed <= 1;
             // clear will cause memctrl to pause
             inst_addr <= corr_jump_addr;
         end else if (inst_ready) begin

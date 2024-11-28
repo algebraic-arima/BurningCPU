@@ -50,7 +50,7 @@ module memctrl(
                       type[2:0] == 3'b101 ? {{16{mem_din[7]}}, mem_din, cur_read_result[7:0]} :
                       0;
     assign mem_dout = cur_store_val[7:0];
-    assign mem_wr = type[3];
+    assign mem_wr = type[3] && (state != 2'b00);
 
     always @(posedge clk_in) begin: Main
         if (rst_in || rdy_in && clear) begin
