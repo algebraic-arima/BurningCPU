@@ -70,7 +70,7 @@ module regfile(
             if (commit_reg_id != 0) begin
                 val[commit_reg_id] <= commit_val;
             end
-            if (issue_reg_ready && commit_ready) begin
+            if ((issue_reg_ready && issue_reg_rd != 0) && (commit_ready && commit_reg_id != 0)) begin
                 if (commit_reg_id == issue_reg_rd) begin
                     dep[issue_reg_rd] <= issue_rob_id;
                     has_dep[issue_reg_rd] <= 1;
@@ -82,10 +82,10 @@ module regfile(
                         has_dep[commit_reg_id] <= 0;
                     end
                 end
-            end else if (issue_reg_ready) begin
+            end else if (issue_reg_ready && issue_reg_rd != 0) begin
                 dep[issue_reg_rd] <= issue_rob_id;
                 has_dep[issue_reg_rd] <= 1;
-            end else if (commit_ready) begin
+            end else if (commit_ready && commit_reg_id != 0) begin
                 if (has_dep[commit_reg_id] && dep[commit_reg_id] == commit_rob_id) begin
                     dep[commit_reg_id] <= 0;
                     has_dep[commit_reg_id] <= 0;

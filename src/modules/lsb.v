@@ -42,10 +42,10 @@ module lsb(
     input wire store_enable,
 
     // to memctrl
-    output reg ls_enable,
-    output reg [31:0] addr,
-    output reg [31:0] store_val,
-    output reg [3:0] lsb_type,
+    output wire ls_enable,
+    output wire [31:0] addr,
+    output wire [31:0] store_val,
+    output wire [3:0] lsb_type,
     input wire ls_finished,
     input wire [31:0] load_val,
 
@@ -73,11 +73,19 @@ module lsb(
 
     assign lsb_full = head == tail + 1 || head == 0 && tail == `LSB_SIZE - 1;
     wire lsb_empty = head == tail;
+    wire [`LSB_WIDTH-1:0] next_head = head + 1 == `LSB_SIZE ? 0 : head + 1;
 
-    wire ls_e = type[head][3] ? (val_ready[head] && !dj[head] && !dk[head]) : (!dj[head] && !dk[head]);
-    wire [31:0] ls_a = type[head][3] ? (vj[head] + a[head]) : (vj[head] + vk[head]);
-    wire [3:0] ls_t = type[head];
-    wire [31:0] st_val = type[head][3] ? vk[head] : 0;
+    wire ls_e = lsb_empty ? 0 : inst_op[head][3] ? (val_ready[head] && !dj[head] && !dk[head]) : (!dj[head] && !dk[head]);
+    wire ls_next_e = (lsb_empty || next_head == tail) ? 0 : 
+                inst_op[next_head][3] ? (val_ready[next_head] && !dj[next_head] && !dk[next_head]) : (!dj[next_head] && !dk[next_head]);
+    wire [31:0] ls_a = inst_op[head][3] ? (vj[head] + a[head]) : (vj[head] + vk[head]);
+    wire [31:0] ls_next_a = inst_op[next_head][3] ? (vj[next_head] + a[next_head]) : (vj[next_head] + vk[next_head]);
+
+    assign store_val = inst_op[head][3] ? vk[head] : 0;
+
+    assign ls_enable = ls_finished ? ls_next_e : ls_e;
+    assign addr = clear ? 0 : (!ls_finished) ? ls_a : ls_next_a;
+    assign lsb_type = ls_finished ? inst_op[next_head] : inst_op[head];
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -101,9 +109,6 @@ module lsb(
             head <= 0;
             tail <= 0;
             working <= 0;
-            ls_enable <= 0;
-            addr <= 0;
-            store_val <= 0;
         end else if (rdy_in) begin
             // update dependence
             for (i = 0; i < `ROB_SIZE; ++i) begin
@@ -144,18 +149,8 @@ module lsb(
                 tail <= tail + 1;
             end
             // ram
-            if ((!working || ls_finished) && !lsb_empty && !inst_op[head][3] && busy[head] && !dj[head] && !dk[head] && !val_ready[head]) begin
-                // load from ram
-                ls_enable <= 1;
-                lsb_type <= inst_op[head];
-                addr <= vj[head] + vk[head];
-                store_val <= 0;
-            end else if ((store_enable || val_ready[head]) && (!working || ls_finished) && !lsb_empty && inst_op[head][3] && busy[head] && !dj[head] && !dk[head] && !val_ready[head]) begin
-                // store to ram
-                ls_enable <= 1;
-                lsb_type <= inst_op[head];
-                addr <= vj[head] + a[head];
-                store_val <= vk[head];
+            if (ls_finished) begin
+                head <= head + 1;
             end
             if (working && ls_finished) begin
                 working <= 0;
@@ -174,7 +169,8 @@ module lsb(
                 end else begin
                     value <= load_val;
                 end
-                ls_enable <= 0;
+            end else begin
+                ready <= 0;
             end
         end
     end

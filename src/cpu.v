@@ -156,8 +156,7 @@ module cpu(
 
         .clear(clear),
 
-        .new_inst_addr(32'h0),
-        .melt(1'b0),
+        .melt(rob2dec_melt),
 
         .if_enable(dec2mem_if_enable),
         .if_addr(dec2mem_if_addr),

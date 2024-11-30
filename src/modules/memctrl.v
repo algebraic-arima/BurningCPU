@@ -43,12 +43,12 @@ module memctrl(
     assign mem_a = cur_addr;
     // assign en_in = state == 2'b00 ? (lsb_read_enable || if_read_enable) : 1;
     assign inst = load_val;
-    assign load_val = type[2:0] == 3'b000 ? {24'b0, mem_din} :
+    assign load_val = state == 2'b00 ? type[2:0] == 3'b000 ? {24'b0, mem_din} :
                       type[2:0] == 3'b001 ? {16'b0, mem_din, cur_read_result[7:0]} :
                       type[2:0] == 3'b010 ? {mem_din, cur_read_result[23:0]} :
                       type[2:0] == 3'b100 ? {{24{mem_din[7]}}, mem_din} :
                       type[2:0] == 3'b101 ? {{16{mem_din[7]}}, mem_din, cur_read_result[7:0]} :
-                      0;
+                      0 : 0;
     assign mem_dout = cur_store_val[7:0];
     assign mem_wr = type[3] && (state != 2'b00);
 
@@ -92,6 +92,7 @@ module memctrl(
                             if_ready <= 0;
                         end else begin
                             state <= 3'b010;
+                            cur_store_val <= {8'b0, cur_store_val[31:8]};
                             cur_addr <= cur_addr + 1;
                         end
                     end else begin
@@ -141,7 +142,6 @@ module memctrl(
                 end
                 3'b100: begin // the last byte fetched/stored
                     if (type[3]) begin
-                        cur_store_val <= {8'b0, cur_store_val[31:8]};
                         state <= 3'b000;
                     end else begin
                         cur_read_result[23:16] <= mem_din;

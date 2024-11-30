@@ -5,7 +5,6 @@ module decoder(
 
     input wire clear,
 
-    input [31:0] new_inst_addr,
     input wire melt,
 
     // from to memctrl
@@ -133,10 +132,10 @@ module decoder(
     assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
 
     wire j = 1'b1;
-    assign next_addr = clear ? new_inst_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : inst_addr + 4);
+    assign next_addr = clear ? corr_jump_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : inst_addr + 4);
     // always predict jump
 
-    assign if_enable = (!working || inst_ready) && work_enable || 1'b1;
+    assign if_enable = work_enable && !(inst_ready && op_code == jalr);
     assign if_addr = next_addr;
 
     always @(posedge clk_in) begin: Main
@@ -150,11 +149,24 @@ module decoder(
             rs2_dep <= 0;
             last_inst <= 0;
             inst_addr <= 0;
-            rob_issue_ready <= 0;
             reg_issue_ready <= 0;
+            reg_rd <= 0;
+
+            rob_issue_ready <= 0;
+            rob_inst_addr <= 0;
+            rob_jump_addr <= 0;
+            rob_type <= 2'b00;
+            rob_rd <= 5'b00000;
+
             rs_issue_ready <= 0;
+            rs_type <= 5'b0;
+            rs_true_addr <= 0;
+            rs_false_addr <= 0;
+
             lsb_issue_ready <= 0;
+            lsb_type <= 4'b0;
             lsb_imm <= 0;
+            
             working <= 0;
         end else if (rdy_in && clear) begin
             working <= 0;
@@ -190,7 +202,7 @@ module decoder(
             lsb_type <= {op_code == s ? 1'b1 : 1'b0, op_type};
 
             rs1_val <= op_code == lui ? 0 : (op_code == auipc || op_code == jal) ? inst_addr : get_val_1;
-            rs2_val <= (op_code == lui || op_code == auipc) ? imm_u : (op_code == jal) ? imm_j : (op_code == jalr || op_code == l || op_code == im) ? imm_i : get_val_2;
+            rs2_val <= (op_code == lui || op_code == auipc) ? imm_u : (op_code == jal) ? 4 : (op_code == jalr || op_code == l || op_code == im) ? imm_i : get_val_2;
             rs1_has_dep <= (op_code == lui || op_code == auipc || op_code == jal) ? 0 : has_dep_1;
             rs2_has_dep <= (op_code == b || op_code == s || op_code == r) ? has_dep_2 : 0;
             rs1_dep <= get_dep_1;
@@ -207,6 +219,12 @@ module decoder(
             end else begin
                 lsb_imm <= 0;
             end
+            if (op_code == jalr) begin
+                freezed <= 1;
+            end
+        end else if (melt) begin
+            freezed <= 0;
+            inst_addr <= corr_jump_addr;
         end else begin
             reg_issue_ready <= 0;
             rob_issue_ready <= 0;

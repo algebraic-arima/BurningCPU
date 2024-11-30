@@ -3,7 +3,6 @@ module rob(
     input wire rst_in,  // reset signal
     input wire rdy_in,  // ready signal, pause cpu when low
 
-    output reg clear,
     output wire rob_full,
 
     // issue: from decoder, to regfile
@@ -15,9 +14,11 @@ module rob(
     input wire [4:0] rd,
 
     // to decoder: freeze
-    output wire melt,
+    output reg melt,
     // to decoder: predict false
-    output wire [31:0] corr_jump_addr,
+    output reg clear,
+    // to decoder: next addr
+    output reg [31:0] corr_jump_addr,
 
 
     // from rs
@@ -31,13 +32,14 @@ module rob(
     input wire [31 : 0] lsb_value,
 
     // to lsb
-    output reg store_enable,
+    output wire store_enable,
 
     // commit to regfile
     output reg commit_ready,
     output reg [`ROB_WIDTH-1:0] commit_rob_id,
     output reg [4:0] commit_reg_id,
     output reg [31:0] commit_val,
+    output reg [31:0] commit_inst_addr,
 
     // search: from regfile, to regfile
     input wire [`ROB_WIDTH-1:0] search_rob_id_1,
@@ -63,14 +65,12 @@ module rob(
     reg [4:0] inst_rd[0:`ROB_SIZE-1];
     reg [31:0] inst_val[0:`ROB_SIZE-1]; // for branch, true jump addr; for others, the value of rd
     reg [31:0] inst_addr[0:`ROB_SIZE-1];
-    reg [31:0] jump_addr[0:`ROB_SIZE-1]; // for branch: predicted jump addr
+    reg [31:0] jump_addr[0:`ROB_SIZE-1]; // for branch: predicted jump addr; for jalr: pc + 4 storage
     reg [`ROB_WIDTH-1:0] head;
     reg [`ROB_WIDTH-1:0] tail;
 
     // instruction type: BR, ST, JALR, RG
     reg [1:0] inst_type[0:`ROB_SIZE-1];
-
-    reg has_jalr;
 
     assign search_ready_1 = (rs_ready && rs_rob_id == search_rob_id_1) || (lsb_ready && lsb_rob_id == search_rob_id_1) || busy[search_rob_id_1] && status[search_rob_id_1] == WR;
     assign search_ready_2 = (rs_ready && rs_rob_id == search_rob_id_2) || (lsb_ready && lsb_rob_id == search_rob_id_2) || busy[search_rob_id_2] && status[search_rob_id_2] == WR;
@@ -79,20 +79,19 @@ module rob(
     wire rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
-    assign melt = !has_jalr;
-    assign corr_jump_addr = inst_val[head];
+    assign store_enable = rob_empty ? 0 : inst_type[head] == ST;
 
     always @(posedge clk_in) begin: Main
         integer i;
         if (rst_in || (clear && rdy_in)) begin
             head <= 0;
             tail <= 0;
-            store_enable <= 0;
             commit_ready <= 0;
             commit_reg_id <= 0;
             commit_rob_id <= 0;
             commit_val <= 0; 
-
+            melt <= 0;
+            corr_jump_addr <= 0;
             for (i = 0; i < `ROB_SIZE; i = i + 1) begin
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
@@ -105,14 +104,6 @@ module rob(
         end else if (rdy_in) begin
             // update
             if(dec_ready) begin
-                if(rob_empty && type == ST) begin
-                    store_enable <= 1;
-                end else begin
-                    store_enable <= 0;
-                end 
-                if(type == JALR) begin
-                    has_jalr <= 1;
-                end
                 busy[tail] <= 1;
                 inst_rd[tail] <= rd;
                 inst_val[tail] <= 0;
@@ -132,29 +123,34 @@ module rob(
             end
             // commit
             if (busy[head] && (status[head] == CO || status[head] == WR)) begin
-                commit_ready <= 1;
+                // $display("pc: %h", inst_addr[head]);
+                // $display("time: %d", $time);
                 head <= head + 1;
                 busy[head] <= 0;
+                commit_rob_id <= head;
+                commit_inst_addr <= inst_addr[head];
+                melt <= inst_type[head] == JALR;
                 if (inst_type[head] == BR) begin
+                    commit_ready <= 0;
                     if (inst_val[head] != jump_addr[head]) begin
                         clear <= 1;
+                        corr_jump_addr <= inst_val[head];
                     end
                 end else if (inst_type[head] == ST) begin
+                    commit_ready <= 0;
+                end else if (inst_type[head] == JALR) begin
+                    commit_ready <= 1;
+                    commit_reg_id <= inst_rd[head];
+                    commit_val <= jump_addr[head];
+                    corr_jump_addr <= inst_val[head];
                 end else begin
-                    commit_rob_id <= head;
+                    commit_ready <= 1;
                     commit_reg_id <= inst_rd[head];
                     commit_val <= inst_val[head];
                 end
-                if (busy[head + 1] && inst_type[head + 1] == ST) begin
-                    store_enable <= 1;
-                end else begin
-                    store_enable <= 0;
-                end
-                if (inst_type[head] == JALR) begin
-                    has_jalr <= 0;
-                end
             end else begin
                 commit_ready <= 0;
+                melt <= 0;
             end
         end
     end
@@ -192,5 +188,74 @@ module rob(
     wire [1:0] status13 = status[13];
     wire [1:0] status14 = status[14];
     wire [1:0] status15 = status[15];
+
+    wire [31:0] ia0 = inst_addr[0];
+    wire [31:0] ia1 = inst_addr[1];
+    wire [31:0] ia2 = inst_addr[2];
+    wire [31:0] ia3 = inst_addr[3];
+    wire [31:0] ia4 = inst_addr[4];
+    wire [31:0] ia5 = inst_addr[5];
+    wire [31:0] ia6 = inst_addr[6];
+    wire [31:0] ia7 = inst_addr[7];
+    wire [31:0] ia8 = inst_addr[8];
+    wire [31:0] ia9 = inst_addr[9];
+    wire [31:0] ia10 = inst_addr[10];
+    wire [31:0] ia11 = inst_addr[11];
+    wire [31:0] ia12 = inst_addr[12];
+    wire [31:0] ia13 = inst_addr[13];
+    wire [31:0] ia14 = inst_addr[14];
+    wire [31:0] ia15 = inst_addr[15];
+
+    wire [31:0] ja0 = jump_addr[0];
+    wire [31:0] ja1 = jump_addr[1];
+    wire [31:0] ja2 = jump_addr[2];
+    wire [31:0] ja3 = jump_addr[3];
+    wire [31:0] ja4 = jump_addr[4];
+    wire [31:0] ja5 = jump_addr[5];
+    wire [31:0] ja6 = jump_addr[6];
+    wire [31:0] ja7 = jump_addr[7];
+    wire [31:0] ja8 = jump_addr[8];
+    wire [31:0] ja9 = jump_addr[9];
+    wire [31:0] ja10 = jump_addr[10];
+    wire [31:0] ja11 = jump_addr[11];
+    wire [31:0] ja12 = jump_addr[12];
+    wire [31:0] ja13 = jump_addr[13];
+    wire [31:0] ja14 = jump_addr[14];
+    wire [31:0] ja15 = jump_addr[15];
+
+    wire [31:0] v0 = inst_val[0];
+    wire [31:0] v1 = inst_val[1];
+    wire [31:0] v2 = inst_val[2];
+    wire [31:0] v3 = inst_val[3];
+    wire [31:0] v4 = inst_val[4];
+    wire [31:0] v5 = inst_val[5];
+    wire [31:0] v6 = inst_val[6];
+    wire [31:0] v7 = inst_val[7];
+    wire [31:0] v8 = inst_val[8];
+    wire [31:0] v9 = inst_val[9];
+    wire [31:0] v10 = inst_val[10];
+    wire [31:0] v11 = inst_val[11];
+    wire [31:0] v12 = inst_val[12];
+    wire [31:0] v13 = inst_val[13];
+    wire [31:0] v14 = inst_val[14];
+    wire [31:0] v15 = inst_val[15];
+
+    wire [1:0] it0 = inst_type[0];
+    wire [1:0] it1 = inst_type[1];
+    wire [1:0] it2 = inst_type[2];
+    wire [1:0] it3 = inst_type[3];
+    wire [1:0] it4 = inst_type[4];
+    wire [1:0] it5 = inst_type[5];
+    wire [1:0] it6 = inst_type[6];
+    wire [1:0] it7 = inst_type[7];
+    wire [1:0] it8 = inst_type[8];
+    wire [1:0] it9 = inst_type[9];
+    wire [1:0] it10 = inst_type[10];
+    wire [1:0] it11 = inst_type[11];
+    wire [1:0] it12 = inst_type[12];
+    wire [1:0] it13 = inst_type[13];
+    wire [1:0] it14 = inst_type[14];
+    wire [1:0] it15 = inst_type[15];
+    
 
 endmodule
