@@ -37,6 +37,7 @@ module cpu(
     wire [31:0] dec2mem_if_addr;
     wire mem2dec_if_ready;
     wire [31:0] mem2dec_inst;
+    wire mem2dec_is_c;
 
     // mem lsb
     wire lsb2mem_ls_enable;
@@ -64,6 +65,7 @@ module cpu(
         .inst_addr(dec2mem_if_addr),
         .if_ready(mem2dec_if_ready),
         .inst(mem2dec_inst),
+        .is_c(mem2dec_is_c),
 
         .ls_enable(lsb2mem_ls_enable),
         .ls_addr(lsb2mem_ls_addr),
@@ -161,7 +163,8 @@ module cpu(
         .if_enable(dec2mem_if_enable),
         .if_addr(dec2mem_if_addr),
         .inst_ready(mem2dec_if_ready),
-        .inst(mem2dec_inst),
+        .inst_val(mem2dec_inst),
+        .is_c(mem2dec_is_c),
 
         .reg_issue_ready(dec2reg_issue_ready),
         .reg_rd(dec2reg_rd),

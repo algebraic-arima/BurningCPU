@@ -90,6 +90,7 @@ module rob(
             commit_reg_id <= 0;
             commit_rob_id <= 0;
             commit_val <= 0; 
+            commit_inst_addr <= 0;
             melt <= 0;
             corr_jump_addr <= 0;
             for (i = 0; i < `ROB_SIZE; i = i + 1) begin

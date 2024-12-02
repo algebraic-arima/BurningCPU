@@ -37,8 +37,6 @@ module rs (
 
 );
 
-    
-
     reg busy [0:`RS_SIZE-1];
     reg [4:0] inst_type[0:`RS_SIZE-1]; // [4] branch, [3] = inst[30], [2:0] = inst[14:12]
     reg [31:0] vj[0:`RS_SIZE-1];

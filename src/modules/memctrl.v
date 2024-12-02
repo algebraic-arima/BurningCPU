@@ -17,6 +17,7 @@ module memctrl(
     input wire [31:0] inst_addr,
     output reg if_ready,
     output wire [31:0] inst,
+    output wire is_c,
 
     // from to lsb
     input wire ls_enable,
@@ -51,6 +52,7 @@ module memctrl(
                       0 : 0;
     assign mem_dout = cur_store_val[7:0];
     assign mem_wr = type[3] && (state != 2'b00);
+    assign is_c = is_if && type == 4'b0001;
 
     always @(posedge clk_in) begin: Main
         if (rst_in || rdy_in && clear) begin
@@ -89,7 +91,7 @@ module memctrl(
                         if (type[1:0] == 2'b00) begin
                             state <= 3'b000;
                             ls_finished <= 1;
-                            if_ready <= 0;
+                            if_ready <= 0; // sb
                         end else begin
                             state <= 3'b010;
                             cur_store_val <= {8'b0, cur_store_val[31:8]};
@@ -99,7 +101,7 @@ module memctrl(
                         if (type[1:0] == 2'b00) begin
                             state <= 3'b000;
                             ls_finished <= 1;
-                            if_ready <= 0;
+                            if_ready <= 0; // lb
                         end else begin
                             state <= 3'b010;
                             cur_addr <= cur_addr + 1;
@@ -111,7 +113,7 @@ module memctrl(
                         if (type[1:0] == 2'b01) begin
                             state <= 3'b000;
                             ls_finished <= 1;
-                            if_ready <= 0;
+                            if_ready <= 0; // sh
                         end else begin
                             cur_store_val <= {8'b0, cur_store_val[31:8]};
                             cur_addr <= cur_addr + 1;
@@ -122,10 +124,17 @@ module memctrl(
                         if (type[1:0] == 2'b01) begin
                             state <= 3'b000;
                             ls_finished <= 1;
-                            if_ready <= 0;
+                            if_ready <= 0; // lh
                         end else begin
-                            cur_addr <= cur_addr + 1;
-                            state <= 3'b011;
+                            if (is_if && !(mem_din[0] && mem_din[1])) begin
+                                type <= 3'b001;
+                                state <= 3'b000;
+                                ls_finished <= 0;
+                                if_ready <= 1; // rv32c inst
+                            end else begin
+                                cur_addr <= cur_addr + 1;
+                                state <= 3'b011;
+                            end
                         end
                     end
                 end

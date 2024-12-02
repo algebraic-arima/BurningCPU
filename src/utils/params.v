@@ -7,3 +7,5 @@
 
 `define LSB_SIZE 8
 `define LSB_WIDTH 3
+
+`define ADDR_WIDTH 32
