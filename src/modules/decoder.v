@@ -108,7 +108,7 @@ module decoder(
     wire [11:0] c_lwsp_uimm = {4'b0000, inst_val[3:2], inst_val[12], inst_val[6:4], 2'b00};
     wire [11:0] c_swsp_uimm = {4'b0000, inst_val[8:7], inst_val[12:9], 2'b00};
     wire [11:0] c_addi_nzimm = {{7{inst_val[12]}}, inst_val[6:2]};
-    wire [12:0] c_b_offset = {{4{inst_val[12]}}, inst_val[6:5], inst_val[2], inst_val[11:10], inst_val[4:3], 1'b0};
+    wire [12:0] c_b_offset = {{5{inst_val[12]}}, inst_val[6:5], inst_val[2], inst_val[11:10], inst_val[4:3], 1'b0};
     wire [20:0] c_j_offset = {{10{inst_val[12]}}, inst_val[8], inst_val[10:9], inst_val[6], inst_val[7], inst_val[2], inst_val[11], inst_val[5:3], 1'b0};
     wire [4:0] c_rs1 = inst_val[11:7];
     wire [4:0] c_rs2 = inst_val[6:2];
@@ -117,50 +117,50 @@ module decoder(
 
     assign c_inst_val = 
                     (c_op_code == 2'b00) ? (
-                        (c_funct3 == 3'b000) ? {2'b00, inst_val[10:7], inst_val[12:11], inst_val[5], inst_val[6], 2'b00, 5'b00010, 3'b000, c_rs2_p, im} :
-                        (c_funct3 == 3'b010) ? {c_lsw_uimm, c_rs1_p, 3'b010, c_rs2_p, l} :
-                        (c_funct3 == 3'b110) ? {c_lsw_uimm[11:5], c_rs2_p, c_rs1_p, 3'b010, c_lsw_uimm[4:0], s} :
+                        (c_funct3 == 3'b000) ? {2'b00, inst_val[10:7], inst_val[12:11], inst_val[5], inst_val[6], 2'b00, 5'b00010, 3'b000, c_rs2_p, im} : // c.addi4spn
+                        (c_funct3 == 3'b010) ? {c_lsw_uimm, c_rs1_p, 3'b010, c_rs2_p, l} : // c.lw
+                        (c_funct3 == 3'b110) ? {c_lsw_uimm[11:5], c_rs2_p, c_rs1_p, 3'b010, c_lsw_uimm[4:0], s} : // c.sw
                         0
                     ) :
                     (c_op_code == 2'b01) ? (
-                        (c_funct3 == 3'b000) ? {c_addi_nzimm, c_rs1_p, 3'b000, c_rs1, im} :
-                        (c_funct3 == 3'b001) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b1, jal} :
-                        (c_funct3 == 3'b010) ? {c_addi_nzimm, 5'b000, 3'b000, c_rs1, im} :
+                        (c_funct3 == 3'b000) ? {c_addi_nzimm, c_rs1, 3'b0, c_rs1, im} : // c.addi
+                        (c_funct3 == 3'b001) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b1, jal} : // c.jal
+                        (c_funct3 == 3'b010) ? {c_addi_nzimm, 5'b0, 3'b0, c_rs1, im} : // c.li
                         (c_funct3 == 3'b011) ? (
-                            (c_rs1 == 5'b00010) ? {{3{inst_val[12]}}, inst_val[4:3], inst_val[5], inst_val[2], inst_val[6], 4'b0000, 5'b00010, 3'b000, 5'b00010, im} :
-                            {8'b0, c_addi_nzimm, c_rs1, lui}
+                            (c_rs1 == 5'b00010) ? {{3{inst_val[12]}}, inst_val[4:3], inst_val[5], inst_val[2], inst_val[6], 4'b0000, 5'b00010, 3'b000, 5'b00010, im} : // c.lui
+                            {8'b0, c_addi_nzimm, c_rs1, lui} // c.addi16sp
                         ) :
                         (c_funct3 == 3'b100) ? (
-                            (c_funct2 == 2'b00) ? {7'b0, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} :
-                            (c_funct2 == 2'b01) ? {7'b0100000, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} :
-                            (c_funct2 == 2'b10) ? {c_addi_nzimm, c_rs1_p, 3'b111, c_rs1_p, im} :
+                            (c_funct2 == 2'b00) ? {7'b0, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} : // c.srli
+                            (c_funct2 == 2'b01) ? {7'b0100000, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} : // c.srai
+                            (c_funct2 == 2'b10) ? {c_addi_nzimm, c_rs1_p, 3'b111, c_rs1_p, im} : // c.andi
                             (c_funct2 == 2'b11) ? (
-                                (c_op_type == 2'b00) ? {7'b0100000, c_rs2_p, c_rs1_p, 3'b000, c_rs1_p, r} :
-                                (c_op_type == 2'b01) ? {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, im} :
-                                (c_op_type == 2'b10) ? {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, im} :
-                                {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, im}
+                                (c_op_type == 2'b00) ? {7'b0100000, c_rs2_p, c_rs1_p, 3'b000, c_rs1_p, r} : // c.sub
+                                (c_op_type == 2'b01) ? {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, im} : // c.xor
+                                (c_op_type == 2'b10) ? {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, im} : // c.or
+                                {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, im} // c.and
                             ) :
                             0
                         ) :
-                        (c_funct3 == 3'b101) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b0, jal} :
-                        (c_funct3 == 3'b110) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b000, c_b_offset[4:1], c_b_offset[11], b} :
-                        (c_funct3 == 3'b111) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b001, c_b_offset[4:1], c_b_offset[11], b} :
+                        (c_funct3 == 3'b101) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b0, jal} : // c.j
+                        (c_funct3 == 3'b110) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b000, c_b_offset[4:1], c_b_offset[11], b} : // c.beqz
+                        (c_funct3 == 3'b111) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b001, c_b_offset[4:1], c_b_offset[11], b} : // c.bnez
                         0
                     ) :
                     (c_op_code == 2'b10) ? (
-                        (c_funct3 == 3'b000) ? {7'b0, inst_val[6:2], c_rs1, 3'b001, c_rs1, im} :
-                        (c_funct3 == 3'b010) ? {c_lwsp_uimm, 5'b00010, 3'b010, c_rs2, l} :
+                        (c_funct3 == 3'b000) ? {7'b0, inst_val[6:2], c_rs1, 3'b001, c_rs1, im} : // c.slli
+                        (c_funct3 == 3'b010) ? {c_lwsp_uimm, 5'b00010, 3'b010, c_rs1, l} : // c.lwsp
                         (c_funct3 == 3'b100) ? (
                             (!c_funct_flag) ? (
-                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b0, jalr} :
-                                {7'b0, c_rs2, 5'b0, 3'b000, c_rs1, r}
+                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b0, jalr} : // c.jr
+                                {7'b0, c_rs2, 5'b0, 3'b000, c_rs1, r} // c.mv
                             ) :
                             (
-                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b1, jalr} :
-                                {7'b0, c_rs2, c_rs1, 3'b000, c_rs1, r}
+                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b1, jalr} : // c.jalr
+                                {7'b0, c_rs2, c_rs1, 3'b000, c_rs1, r} // c.add
                             )
                         ) :
-                        (c_funct3 == 3'b110) ? {c_swsp_uimm[11:5], c_rs2, 5'b00010, 3'b010, c_swsp_uimm[4:0], s} :
+                        (c_funct3 == 3'b110) ? {c_swsp_uimm[11:5], c_rs2, 5'b00010, 3'b010, c_swsp_uimm[4:0], s} : // c.swsp
                         0
                     ) :
                     0;
@@ -279,7 +279,11 @@ module decoder(
             rs2_dep <= get_dep_2;
             if (op_code == b) begin
                 rs_true_addr <= inst_addr + imm_b;
-                rs_false_addr <= inst_addr + 4;
+                if (is_c) begin
+                    rs_false_addr <= inst_addr + 2;
+                end else begin
+                    rs_false_addr <= inst_addr + 4;                    
+                end
             end else begin
                 rs_true_addr <= 0;
                 rs_false_addr <= 0;
