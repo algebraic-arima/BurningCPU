@@ -25,7 +25,16 @@ module memctrl(
     input wire [31:0] store_val,
     input wire [3:0] lsb_type, // 0 for byte, 1 for half, 2 for word
     output reg ls_finished,
-    output wire [31:0] load_val
+    output wire [31:0] load_val,
+
+    // from to icache
+    output wire icache_enable,
+    output wire [31:0] icache_addr,
+    input wire icache_hit,
+    input wire [31:0] icache_data,
+    output wire [31:0] write_ready,
+    output wire [31:0] write_addr,
+    output wire [31:0] write_inst
 
 );
 
@@ -44,12 +53,14 @@ module memctrl(
     assign mem_a = cur_addr;
     // assign en_in = state == 2'b00 ? (lsb_read_enable || if_read_enable) : 1;
     assign inst = load_val;
-    assign load_val = state == 2'b00 ? type[2:0] == 3'b000 ? {24'b0, mem_din} :
-                      type[2:0] == 3'b001 ? {16'b0, mem_din, cur_read_result[7:0]} :
-                      type[2:0] == 3'b010 ? {mem_din, cur_read_result[23:0]} :
-                      type[2:0] == 3'b100 ? {{24{mem_din[7]}}, mem_din} :
-                      type[2:0] == 3'b101 ? {{16{mem_din[7]}}, mem_din, cur_read_result[7:0]} :
-                      0 : 0;
+    assign load_val = state == 3'b000 ? 
+                        icache_hit ? icache_data :
+                        type[2:0] == 3'b000 ? {24'b0, mem_din} :
+                        type[2:0] == 3'b001 ? {16'b0, mem_din, cur_read_result[7:0]} :
+                        type[2:0] == 3'b010 ? {mem_din, cur_read_result[23:0]} :
+                        type[2:0] == 3'b100 ? {{24{mem_din[7]}}, mem_din} :
+                        type[2:0] == 3'b101 ? {{16{mem_din[7]}}, mem_din, cur_read_result[7:0]} :
+                        0 : 0;
     assign mem_dout = cur_store_val[7:0];
     assign mem_wr = type[3] && (state != 2'b00);
     assign is_c = is_if && type == 4'b0001;

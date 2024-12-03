@@ -202,7 +202,7 @@ module decoder(
     assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
 
     wire j = 1'b1;
-    assign next_addr = clear ? corr_jump_addr : (!inst_ready) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : (is_c ? inst_addr + 2 : inst_addr + 4));
+    assign next_addr = clear ? corr_jump_addr : !(inst_ready && work_enable) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : (is_c ? inst_addr + 2 : inst_addr + 4));
     // always predict jump
 
     assign if_enable = work_enable && !(inst_ready && op_code == jalr);
@@ -243,7 +243,9 @@ module decoder(
             rob_issue_ready <= 0;
             // clear will cause memctrl to pause
             inst_addr <= corr_jump_addr;
-        end else if (inst_ready) begin
+            lsb_issue_ready <= 0;
+            rs_issue_ready <= 0;
+        end else if (inst_ready && work_enable) begin
             working <= 1;
             freezed <= 0;
             inst_addr <= next_addr;

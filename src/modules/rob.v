@@ -124,7 +124,7 @@ module rob(
             end
             // commit
             if (busy[head] && (status[head] == CO || status[head] == WR)) begin
-                // $display("pc: %h", inst_addr[head]);
+                // $display("%h", inst_addr[head]);
                 // $display("time: %d", $time);
                 head <= head + 1;
                 busy[head] <= 0;

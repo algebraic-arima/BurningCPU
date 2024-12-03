@@ -72,7 +72,15 @@ module cpu(
         .store_val(lsb2mem_store_val),
         .lsb_type(lsb2mem_lsb_type),
         .ls_finished(mem2lsb_ls_finished),
-        .load_val(mem2lsb_load_val)
+        .load_val(mem2lsb_load_val),
+
+        .icache_enable(),
+        .icache_addr(),
+        .icache_hit(1'b0),
+        .icache_data(0),
+        .write_ready(),
+        .write_addr(),
+        .write_inst()
     );
 
     
