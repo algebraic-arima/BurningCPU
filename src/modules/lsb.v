@@ -137,10 +137,10 @@ module lsb(
             if (dec_ready) begin
                 busy[tail] <= 1;
                 inst_op[tail] <= type;
-                vj[tail] <= (rs_ready && dep_j == rs_rob_id) ? rs_value : (lsb_ready && dep_j == lsb_rob_id) ? lsb_value : val_j;
-                vk[tail] <= (rs_ready && dep_k == rs_rob_id) ? rs_value : (lsb_ready && dep_k == lsb_rob_id) ? lsb_value : val_k;
-                dj[tail] <= has_dep_j && !(rs_ready && dep_j == rs_rob_id) && !(lsb_ready && dep_j == lsb_rob_id);
-                dk[tail] <= has_dep_k && !(rs_ready && dep_k == rs_rob_id) && !(lsb_ready && dep_k == lsb_rob_id);
+                vj[tail] <= (rs_ready && has_dep_j && dep_j == rs_rob_id) ? rs_value : (lsb_ready && has_dep_j && dep_j == lsb_rob_id) ? lsb_value : val_j;
+                vk[tail] <= (rs_ready && has_dep_k && dep_k == rs_rob_id) ? rs_value : (lsb_ready && has_dep_k && dep_k == lsb_rob_id) ? lsb_value : val_k;
+                dj[tail] <= has_dep_j && !(rs_ready && has_dep_j && dep_j == rs_rob_id) && !(lsb_ready && has_dep_j && dep_j == lsb_rob_id);
+                dk[tail] <= has_dep_k && !(rs_ready && has_dep_k && dep_k == rs_rob_id) && !(lsb_ready && has_dep_k && dep_k == lsb_rob_id);
                 qj[tail] <= dep_j;
                 qk[tail] <= dep_k;
                 a[tail] <= imm;

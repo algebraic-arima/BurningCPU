@@ -47,6 +47,17 @@ module cpu(
     wire mem2lsb_ls_finished;
     wire [31:0] mem2lsb_load_val;
 
+    // mem icache
+    wire mem2ic_ready;
+    wire [31:0] mem2ic_get_addr;
+    wire ic2mem_hit;
+    wire [31:0] ic2mem_get_inst;
+    wire ic2mem_get_is_c;
+    wire mem2ic_inst_ready;
+    wire mem2ic_wr_is_c;
+    wire [31:0] mem2ic_wr_addr;
+    wire [31:0] mem2ic_wr_inst;
+
     memctrl mc0(
         .clk_in(clk_in),
         .rst_in(rst_in),
@@ -74,13 +85,32 @@ module cpu(
         .ls_finished(mem2lsb_ls_finished),
         .load_val(mem2lsb_load_val),
 
-        .icache_enable(),
-        .icache_addr(),
-        .icache_hit(1'b0),
-        .icache_data(0),
-        .write_ready(),
-        .write_addr(),
-        .write_inst()
+        .icache_get_ready(mem2ic_ready),
+        .get_icache_addr(mem2ic_get_addr),
+        .icache_hit(ic2mem_hit),
+        .icache_data(ic2mem_get_inst),
+        .icache_data_is_c(ic2mem_get_is_c),
+        .wr_ready(mem2ic_inst_ready),
+        .wr_is_c(mem2ic_wr_is_c),
+        .wr_addr(mem2ic_wr_addr),
+        .wr_inst(mem2ic_wr_inst)
+    );
+
+    icache ic0(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .rdy_in(rdy_in),
+
+        .icache_get_ready(mem2ic_ready),
+        .icache_get_addr(mem2ic_get_addr),
+        .hit(ic2mem_hit),
+        .icache_get_inst(ic2mem_get_inst),
+        .icache_get_is_c(ic2mem_get_is_c),
+
+        .wr_ready(mem2ic_inst_ready),
+        .wr_is_c(mem2ic_wr_is_c),
+        .wr_addr(mem2ic_wr_addr),
+        .wr_inst(mem2ic_wr_inst)
     );
 
     

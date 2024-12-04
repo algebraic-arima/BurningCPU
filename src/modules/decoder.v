@@ -245,6 +245,8 @@ module decoder(
             inst_addr <= corr_jump_addr;
             lsb_issue_ready <= 0;
             rs_issue_ready <= 0;
+            reg_issue_ready <= 0;
+            freezed <= 0;
         end else if (inst_ready && work_enable) begin
             working <= 1;
             freezed <= 0;

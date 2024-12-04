@@ -72,10 +72,10 @@ module rob(
     // instruction type: BR, ST, JALR, RG
     reg [1:0] inst_type[0:`ROB_SIZE-1];
 
-    assign search_ready_1 = (rs_ready && rs_rob_id == search_rob_id_1) || (lsb_ready && lsb_rob_id == search_rob_id_1) || busy[search_rob_id_1] && status[search_rob_id_1] == WR;
-    assign search_ready_2 = (rs_ready && rs_rob_id == search_rob_id_2) || (lsb_ready && lsb_rob_id == search_rob_id_2) || busy[search_rob_id_2] && status[search_rob_id_2] == WR;
-    assign search_val_1 = (rs_ready && rs_rob_id == search_rob_id_1) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_1) ? lsb_value : inst_val[search_rob_id_1];
-    assign search_val_2 = (rs_ready && rs_rob_id == search_rob_id_2) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_2) ? lsb_value : inst_val[search_rob_id_2];
+    assign search_ready_1 = (commit_ready && commit_rob_id == search_rob_id_1) || (rs_ready && rs_rob_id == search_rob_id_1) || (lsb_ready && lsb_rob_id == search_rob_id_1) || (busy[search_rob_id_1] && status[search_rob_id_1] == WR) || (busy[search_rob_id_1] && status[search_rob_id_1] == CO);
+    assign search_ready_2 = (commit_ready && commit_rob_id == search_rob_id_2) || (rs_ready && rs_rob_id == search_rob_id_2) || (lsb_ready && lsb_rob_id == search_rob_id_2) || (busy[search_rob_id_2] && status[search_rob_id_2] == WR) || (busy[search_rob_id_2] && status[search_rob_id_2] == CO);
+    assign search_val_1 = (commit_ready && commit_rob_id == search_rob_id_1) ? commit_val : (rs_ready && rs_rob_id == search_rob_id_1) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_1) ? lsb_value : inst_val[search_rob_id_1];
+    assign search_val_2 = (commit_ready && commit_rob_id == search_rob_id_2) ? commit_val : (rs_ready && rs_rob_id == search_rob_id_2) ? rs_value : (lsb_ready && lsb_rob_id == search_rob_id_2) ? lsb_value : inst_val[search_rob_id_2];
     wire rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;
     assign empty_rob_id = tail;
@@ -223,23 +223,6 @@ module rob(
     wire [31:0] ja13 = jump_addr[13];
     wire [31:0] ja14 = jump_addr[14];
     wire [31:0] ja15 = jump_addr[15];
-
-    wire [31:0] v0 = inst_val[0];
-    wire [31:0] v1 = inst_val[1];
-    wire [31:0] v2 = inst_val[2];
-    wire [31:0] v3 = inst_val[3];
-    wire [31:0] v4 = inst_val[4];
-    wire [31:0] v5 = inst_val[5];
-    wire [31:0] v6 = inst_val[6];
-    wire [31:0] v7 = inst_val[7];
-    wire [31:0] v8 = inst_val[8];
-    wire [31:0] v9 = inst_val[9];
-    wire [31:0] v10 = inst_val[10];
-    wire [31:0] v11 = inst_val[11];
-    wire [31:0] v12 = inst_val[12];
-    wire [31:0] v13 = inst_val[13];
-    wire [31:0] v14 = inst_val[14];
-    wire [31:0] v15 = inst_val[15];
 
     wire [1:0] it0 = inst_type[0];
     wire [1:0] it1 = inst_type[1];

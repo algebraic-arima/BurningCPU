@@ -121,7 +121,7 @@ module rs (
                 a[i] <= 0;
                 rob_dest[i] <= 0;
                 val_ready[i] <= 0;
-            end
+            end     
         end else if (rdy_in) begin
             // update dependence
             for (i = 0; i < `RS_SIZE; i = i + 1) begin
@@ -150,10 +150,10 @@ module rs (
             if (dec_ready) begin
                 busy[pos_idle] <= 1;
                 inst_type[pos_idle] <= type;
-                vj[pos_idle] = !has_dep_j ? val_j : (rs_ready && dep_j == rs_rob_id) ? rs_value : (lsb_ready && dep_j == lsb_rob_id) ? lsb_value : 0;
-                vk[pos_idle] = !has_dep_k ? val_k : (rs_ready && dep_k == rs_rob_id) ? rs_value : (lsb_ready && dep_k == lsb_rob_id) ? lsb_value : 0;
-                dj[pos_idle] <= has_dep_j && !(rs_ready && dep_j == rs_rob_id) && !(lsb_ready && dep_j == lsb_rob_id);
-                dk[pos_idle] <= has_dep_k && !(rs_ready && dep_k == rs_rob_id) && !(lsb_ready && dep_k == lsb_rob_id);
+                vj[pos_idle] = !has_dep_j ? val_j : (rs_ready && has_dep_j && dep_j == rs_rob_id) ? rs_value : (lsb_ready && has_dep_j && dep_j == lsb_rob_id) ? lsb_value : 0;
+                vk[pos_idle] = !has_dep_k ? val_k : (rs_ready && has_dep_k && dep_k == rs_rob_id) ? rs_value : (lsb_ready && has_dep_k && dep_k == lsb_rob_id) ? lsb_value : 0;
+                dj[pos_idle] <= has_dep_j && !(rs_ready && has_dep_j && dep_j == rs_rob_id) && !(lsb_ready && has_dep_j && dep_j == lsb_rob_id);
+                dk[pos_idle] <= has_dep_k && !(rs_ready && has_dep_k && dep_k == rs_rob_id) && !(lsb_ready && has_dep_k && dep_k == lsb_rob_id);
                 qj[pos_idle] <= dep_j;
                 qk[pos_idle] <= dep_k;
                 rob_dest[pos_idle] <= rob_id;

@@ -28,13 +28,15 @@ module memctrl(
     output wire [31:0] load_val,
 
     // from to icache
-    output wire icache_enable,
-    output wire [31:0] icache_addr,
+    output wire icache_get_ready,
+    output wire [31:0] get_icache_addr,
     input wire icache_hit,
     input wire [31:0] icache_data,
-    output wire [31:0] write_ready,
-    output wire [31:0] write_addr,
-    output wire [31:0] write_inst
+    input wire icache_data_is_c,
+    output wire wr_ready,
+    output wire wr_is_c,
+    output wire [31:0] wr_addr,
+    output wire [31:0] wr_inst
 
 );
 
@@ -50,11 +52,14 @@ module memctrl(
     reg [31:0] cur_read_result;
     reg [7:0] cur_store_byte;
 
+    reg icache_hit_b;
+    reg [31:0] icache_inst_b;
+
     assign mem_a = cur_addr;
     // assign en_in = state == 2'b00 ? (lsb_read_enable || if_read_enable) : 1;
     assign inst = load_val;
     assign load_val = state == 3'b000 ? 
-                        icache_hit ? icache_data :
+                        icache_hit_b ? icache_inst_b :
                         type[2:0] == 3'b000 ? {24'b0, mem_din} :
                         type[2:0] == 3'b001 ? {16'b0, mem_din, cur_read_result[7:0]} :
                         type[2:0] == 3'b010 ? {mem_din, cur_read_result[23:0]} :
@@ -64,6 +69,12 @@ module memctrl(
     assign mem_dout = cur_store_val[7:0];
     assign mem_wr = type[3] && (state != 2'b00);
     assign is_c = is_if && type == 4'b0001;
+    assign icache_get_ready = state == 3'b001 && is_if;
+    assign get_icache_addr = base_addr;
+    assign wr_ready = if_ready;
+    assign wr_is_c = is_c;
+    assign wr_addr = base_addr;
+    assign wr_inst = inst;
 
     always @(posedge clk_in) begin: Main
         if (rst_in || rdy_in && clear) begin
@@ -77,7 +88,12 @@ module memctrl(
             is_if <= 0;
             ls_finished <= 0;
             if_ready <= 0;
+            icache_hit_b <= 0;
+            icache_inst_b <= 0;
         end else if (rdy_in) begin
+            if (icache_hit_b) begin
+                icache_hit_b <= 0;
+            end
             case(state)
                 3'b000: begin // idle, see if ready to read
                     ls_finished <= 0;
@@ -114,8 +130,21 @@ module memctrl(
                             ls_finished <= 1;
                             if_ready <= 0; // lb
                         end else begin
-                            state <= 3'b010;
-                            cur_addr <= cur_addr + 1;
+                            if(is_if && icache_hit) begin
+                                if (icache_data_is_c) begin
+                                    type <= 3'b001;
+                                end else begin
+                                    type <= 3'b010;
+                                end
+                                state <= 3'b000;
+                                ls_finished <= 0;
+                                if_ready <= 1; 
+                                icache_hit_b <= 1;
+                                icache_inst_b <= icache_data; // rv32ic inst
+                            end else begin
+                                state <= 3'b010;
+                                cur_addr <= cur_addr + 1;
+                            end
                         end
                     end
                 end
