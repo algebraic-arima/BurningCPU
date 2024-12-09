@@ -196,10 +196,10 @@ module decoder(
     assign lsb_dep_k = rs2_dep;
     assign lsb_rob_id = empty_rob_id;
 
-    assign push_reg_dep = !(op_code == s || op_code == b);
+    wire push_reg_dep = !(op_code == s || op_code == b);
     assign push_rs = !push_lsb;
     assign push_lsb = op_code == l || op_code == s;
-    assign work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
+    wire work_enable = !freezed && !rob_full && !rs_full && !lsb_full;
 
     wire j = 1'b1;
     assign next_addr = clear ? corr_jump_addr : !(inst_ready && work_enable) ? inst_addr : (op_code == jal ? inst_addr + imm_j : (op_code == b && j) ? inst_addr + imm_b : (is_c ? inst_addr + 2 : inst_addr + 4));

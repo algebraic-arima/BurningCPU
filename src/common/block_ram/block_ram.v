@@ -75,12 +75,6 @@ module single_port_ram_sync
 reg [DATA_WIDTH-1:0] ram [2**ADDR_WIDTH-1:0];
 reg [ADDR_WIDTH-1:0] q_addr_a;
 
-wire [DATA_WIDTH-1:0] debug1088 = ram[1088];
-wire [DATA_WIDTH-1:0] debug1089 = ram[1089];
-wire [DATA_WIDTH-1:0] debug1090 = ram[1090];
-wire [DATA_WIDTH-1:0] debug1091 = ram[1091];
-
-
 always @(posedge clk)
   begin
     if (we)
