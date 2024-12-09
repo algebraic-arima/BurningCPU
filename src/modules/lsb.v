@@ -111,7 +111,7 @@ module lsb(
             working <= 0;
         end else if (rdy_in) begin
             // update dependence
-            for (i = 0; i < `ROB_SIZE; ++i) begin
+            for (i = 0; i < `ROB_SIZE; i = i + 1) begin
                 if (busy[i] && rs_ready) begin
                     if(dj[i] && qj[i] == rs_rob_id) begin
                         vj[i] <= rs_value;

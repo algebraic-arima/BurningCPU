@@ -70,7 +70,7 @@ module cpu(
         .mem_a(mem_a),
         .mem_wr(mem_wr),
 
-        .io_buffer_full(1'b0),
+        .io_buffer_full(io_buffer_full),
 
         .if_enable(dec2mem_if_enable),
         .inst_addr(dec2mem_if_addr),

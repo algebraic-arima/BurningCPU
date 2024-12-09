@@ -24,7 +24,7 @@ module icache(
     // direct mapping cache
     reg valid [0:INDEX_SIZE-1];
     reg is_c [0:INDEX_SIZE-1];
-    reg [30-INDEX_WIDTH] tag[0:INDEX_SIZE-1];
+    reg [30-INDEX_WIDTH:0] tag[0:INDEX_SIZE-1];
     reg [31:0] data[0:INDEX_SIZE-1];
 
     assign hit = icache_get_ready && valid[icache_get_addr[INDEX_WIDTH:1]] && tag[icache_get_addr[INDEX_WIDTH:1]] == icache_get_addr[31:INDEX_WIDTH+1];

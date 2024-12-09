@@ -44,7 +44,7 @@ module memctrl(
     reg is_if;
 
     reg [2:0] state; // 5 states, 000 for idle
-    reg [3:0] type; // {inst[5], inst[14:12]}; 1111 for doing nothing
+    reg [3:0] type; // {inst[5], inst[14:12]}; 0111 for doing nothing
 
     reg [31:0] base_addr; // base addr
     reg [31:0] cur_addr; // now it is fetching the byte of cur_addr
