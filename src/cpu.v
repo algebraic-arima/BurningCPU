@@ -319,7 +319,6 @@ module cpu(
         .commit_reg_id(rob2reg_commit_reg_id),
         .commit_val(rob2reg_commit_val),
         .commit_rob_id(rob2reg_commit_rob_id),
-        .commit_inst_addr(),
 
         .search_rob_id_1(reg2rob_search_rob_id_1),
         .search_rob_id_2(reg2rob_search_rob_id_2),

@@ -18,8 +18,8 @@ module icache(
 
 );
 
-    localparam INDEX_SIZE = 256;
-    localparam INDEX_WIDTH = 8;
+    localparam INDEX_SIZE = 64;
+    localparam INDEX_WIDTH = 6;
 
     // direct mapping cache
     reg valid [0:INDEX_SIZE-1];

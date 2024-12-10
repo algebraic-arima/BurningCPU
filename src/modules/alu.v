@@ -36,39 +36,37 @@ module alu(
     
     output reg ready,
     output reg [`ROB_WIDTH-1:0] rob_id,
-    output reg [31 : 0] value
+    output reg [31:0] value
+);
 
-);   
-
-    wire [31:0] calc[0:32];
-    // assign calc[`JALR] = (lhs + rhs) & {{31{1'b1}}, 1'b0}; // even addr
-
-    assign calc[`BEQ] = lhs == rhs ? true_jaddr : false_jaddr;
-    assign calc[`BNE] = lhs != rhs ? true_jaddr : false_jaddr;
-    assign calc[`BLT] = $signed(lhs) < $signed(rhs) ? true_jaddr : false_jaddr;
-    assign calc[`BGE] = $signed(lhs) >= $signed(rhs) ? true_jaddr : false_jaddr;
-    assign calc[`BLTU] = lhs < rhs ? true_jaddr : false_jaddr;
-    assign calc[`BGEU] = lhs >= rhs ? true_jaddr : false_jaddr;
-
-    assign calc[`ADD] = lhs + rhs;
-    assign calc[`SUB]  = lhs - rhs;
-    assign calc[`SLL] = lhs << rhs[4:0];
-    assign calc[`SLT] = {{31{1'b0}}, {$signed(lhs) < $signed(rhs)}};
-    assign calc[`SLTU] = {{31{1'b0}}, {lhs < rhs}};
-    assign calc[`XOR] = lhs ^ rhs;
-    assign calc[`SR] = rhs[10] ? lhs >>> rhs[4:0] : lhs >> rhs[4:0];
-    assign calc[`OR] = lhs | rhs;
-    assign calc[`AND] = lhs & rhs;
-    
     always @(posedge clk_in) begin
-        if(rst_in | (rdy_in & clear)) begin
+        if (rst_in || (rdy_in && clear)) begin
             ready <= 1'b0;
             value <= 32'b0;
             rob_id <= 0;
-        end else if (rdy_in & calc_enable) begin
+        end else if (rdy_in && calc_enable) begin
             ready <= 1'b1;
-            value <= calc[op];
             rob_id <= rob_dep;
+            case (op)
+                `BEQ:   value <= (lhs == rhs) ? true_jaddr : false_jaddr;
+                `BNE:   value <= (lhs != rhs) ? true_jaddr : false_jaddr;
+                `BLT:   value <= ($signed(lhs) < $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BGE:   value <= ($signed(lhs) >= $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BLTU:  value <= (lhs < rhs) ? true_jaddr : false_jaddr;
+                `BGEU:  value <= (lhs >= rhs) ? true_jaddr : false_jaddr;
+
+                `ADD:   value <= lhs + rhs;
+                `SUB:   value <= lhs - rhs;
+                `SLL:   value <= lhs << rhs[4:0];
+                `SLT:   value <= {{31{1'b0}}, $signed(lhs) < $signed(rhs)};
+                `SLTU:  value <= {{31{1'b0}}, lhs < rhs};
+                `XOR:   value <= lhs ^ rhs;
+                `SR:    value <= rhs[10] ? lhs >>> rhs[4:0] : lhs >> rhs[4:0];
+                `OR:    value <= lhs | rhs;
+                `AND:   value <= lhs & rhs;
+
+                default: value <= 32'b0;
+            endcase
         end else begin
             ready <= 1'b0;
             value <= 32'b0;

@@ -49,7 +49,6 @@ module rs (
     reg [31:0] true_jaddr[0:`RS_SIZE-1];
     reg [31:0] false_jaddr[0:`RS_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`RS_SIZE-1]; // which rob depends on this
-    reg val_ready [0:`RS_SIZE-1];
 
     wire calc_enable;
     wire [`RS_WIDTH-1:0] pos_calc;
@@ -120,7 +119,6 @@ module rs (
                 qk[i] <= 0;
                 a[i] <= 0;
                 rob_dest[i] <= 0;
-                val_ready[i] <= 0;
             end     
         end else if (rdy_in) begin
             // update dependence
