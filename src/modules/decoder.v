@@ -85,7 +85,6 @@ module decoder(
     reg [31:0] last_inst;
     reg [31:0] inst_addr = 0; // the addr of cur inst
     wire [31:0] next_addr; // the addr of next inst
-    wire [31:0] c_inst_val;
     wire [31:0] inst = is_c ? c_inst_val : inst_val;
 
     wire [6:0] op_code = inst[6:0];
@@ -115,56 +114,84 @@ module decoder(
     wire [4:0] c_rs1_p = {2'b01, inst_val[9:7]};
     wire [4:0] c_rs2_p = {2'b01, inst_val[4:2]}; 
 
-    assign c_inst_val = 
-                    (c_op_code == 2'b00) ? (
-                        (c_funct3 == 3'b000) ? {2'b00, inst_val[10:7], inst_val[12:11], inst_val[5], inst_val[6], 2'b00, 5'b00010, 3'b000, c_rs2_p, im} : // c.addi4spn
-                        (c_funct3 == 3'b010) ? {c_lsw_uimm, c_rs1_p, 3'b010, c_rs2_p, l} : // c.lw
-                        (c_funct3 == 3'b110) ? {c_lsw_uimm[11:5], c_rs2_p, c_rs1_p, 3'b010, c_lsw_uimm[4:0], s} : // c.sw
-                        0
-                    ) :
-                    (c_op_code == 2'b01) ? (
-                        (c_funct3 == 3'b000) ? {c_addi_nzimm, c_rs1, 3'b0, c_rs1, im} : // c.addi
-                        (c_funct3 == 3'b001) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b1, jal} : // c.jal
-                        (c_funct3 == 3'b010) ? {c_addi_nzimm, 5'b0, 3'b0, c_rs1, im} : // c.li
-                        (c_funct3 == 3'b011) ? (
-                            (c_rs1 == 5'b00010) ? {{3{inst_val[12]}}, inst_val[4:3], inst_val[5], inst_val[2], inst_val[6], 4'b0000, 5'b00010, 3'b000, 5'b00010, im} : // c.lui
-                            {8'b0, c_addi_nzimm, c_rs1, lui} // c.addi16sp
-                        ) :
-                        (c_funct3 == 3'b100) ? (
-                            (c_funct2 == 2'b00) ? {7'b0, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} : // c.srli
-                            (c_funct2 == 2'b01) ? {7'b0100000, inst_val[6:2], c_rs1_p, 3'b101, c_rs1_p, im} : // c.srai
-                            (c_funct2 == 2'b10) ? {c_addi_nzimm, c_rs1_p, 3'b111, c_rs1_p, im} : // c.andi
-                            (c_funct2 == 2'b11) ? (
-                                (c_op_type == 2'b00) ? {7'b0100000, c_rs2_p, c_rs1_p, 3'b000, c_rs1_p, r} : // c.sub
-                                (c_op_type == 2'b01) ? {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, im} : // c.xor
-                                (c_op_type == 2'b10) ? {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, im} : // c.or
-                                {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, im} // c.and
-                            ) :
-                            0
-                        ) :
-                        (c_funct3 == 3'b101) ? {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b0, jal} : // c.j
-                        (c_funct3 == 3'b110) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b000, c_b_offset[4:1], c_b_offset[11], b} : // c.beqz
-                        (c_funct3 == 3'b111) ? {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b001, c_b_offset[4:1], c_b_offset[11], b} : // c.bnez
-                        0
-                    ) :
-                    (c_op_code == 2'b10) ? (
-                        (c_funct3 == 3'b000) ? {7'b0, inst_val[6:2], c_rs1, 3'b001, c_rs1, im} : // c.slli
-                        (c_funct3 == 3'b010) ? {c_lwsp_uimm, 5'b00010, 3'b010, c_rs1, l} : // c.lwsp
-                        (c_funct3 == 3'b100) ? (
-                            (!c_funct_flag) ? (
-                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b0, jalr} : // c.jr
-                                {7'b0, c_rs2, 5'b0, 3'b000, c_rs1, r} // c.mv
-                            ) :
-                            (
-                                (c_rs2 == 5'b0) ? {12'b0, c_rs1, 3'b000, 5'b1, jalr} : // c.jalr
-                                {7'b0, c_rs2, c_rs1, 3'b000, c_rs1, r} // c.add
-                            )
-                        ) :
-                        (c_funct3 == 3'b110) ? {c_swsp_uimm[11:5], c_rs2, 5'b00010, 3'b010, c_swsp_uimm[4:0], s} : // c.swsp
-                        0
-                    ) :
-                    0;
+    wire [31:0] c_inst_val = c2i(inst_val);
 
+    function [31:0] c2i (
+        input [31:0] c_inst
+    );
+    begin
+        case(c_op_code)
+            2'b00: begin
+                case(c_funct3)
+                    3'b000: c2i = {2'b00, c_inst[10:7], c_inst[12:11], c_inst[5], c_inst[6], 2'b00, 5'b00010, 3'b000, c_rs2_p, im}; // c.addi4spn
+                    3'b010: c2i = {c_lsw_uimm, c_rs1_p, 3'b010, c_rs2_p, l}; // c.lw
+                    3'b110: c2i = {c_lsw_uimm[11:5], c_rs2_p, c_rs1_p, 3'b010, c_lsw_uimm[4:0], s}; // c.sw
+                    default: c2i = 0;
+                endcase
+            end
+            2'b01: begin
+                case(c_funct3)
+                    3'b000: c2i = {c_addi_nzimm, c_rs1, 3'b0, c_rs1, im}; // c.addi
+                    3'b001: c2i = {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b1, jal}; // c.jal
+                    3'b010: c2i = {c_addi_nzimm, 5'b0, 3'b0, c_rs1, im}; // c.li
+                    3'b011: begin
+                        case(c_rs1)
+                            5'b00010: c2i = {{3{c_inst[12]}}, c_inst[4:3], c_inst[5], c_inst[2], c_inst[6], 4'b0000, 5'b00010, 3'b000, 5'b00010, im}; // c.lui
+                            default: c2i = {8'b0, c_addi_nzimm, c_rs1, lui}; // c.addi16sp
+                        endcase
+                    end
+                    3'b100: begin
+                        case(c_funct2)
+                            2'b00: c2i = {7'b0, c_inst[6:2], c_rs1_p, 3'b101, c_rs1_p, im}; // c.srli
+                            2'b01: c2i = {7'b0100000, c_inst[6:2], c_rs1_p, 3'b101, c_rs1_p, im}; // c.srai
+                            2'b10: c2i = {c_addi_nzimm, c_rs1_p, 3'b111, c_rs1_p, im}; // c.andi
+                            2'b11: begin
+                                case(c_op_type)
+                                    2'b00: c2i = {7'b0100000, c_rs2_p, c_rs1_p, 3'b000, c_rs1_p, r}; // c.sub
+                                    2'b01: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, im}; // c.xor
+                                    2'b10: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, im}; // c.or
+                                    2'b11: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, im}; // c.and
+                                    default: c2i = 0;
+                                endcase
+                            end
+                            default: c2i = 0;
+                        endcase
+                    end
+                    3'b101: c2i = {c_j_offset[20], c_j_offset[10:1], c_j_offset[11], c_j_offset[19:12], 5'b0, jal}; // c.j
+                    3'b110: c2i = {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b000, c_b_offset[4:1], c_b_offset[11], b}; // c.beqz
+                    3'b111: c2i = {c_b_offset[12], c_b_offset[10:5], 5'b0, c_rs1_p, 3'b001, c_b_offset[4:1], c_b_offset[11], b}; // c.bnez
+                    default: c2i = 0;
+                endcase
+            end
+            2'b10: begin
+                case(c_funct3)
+                    3'b000: c2i = {7'b0, c_inst[6:2], c_rs1, 3'b001, c_rs1, im}; // c.slli
+                    3'b010: c2i = {c_lwsp_uimm, 5'b00010, 3'b010, c_rs1, l}; // c.lwsp
+                    3'b100: begin
+                        case(c_funct_flag)
+                            1'b0: begin
+                                case(c_rs2)
+                                    5'b0: c2i = {12'b0, c_rs1, 3'b000, 5'b0, jalr}; // c.jr
+                                    default: c2i = {7'b0, c_rs2, 5'b0, 3'b000, c_rs1, r}; // c.mv
+                                endcase
+                            end
+                            1'b1: begin
+                                case(c_rs2)
+                                    5'b0: c2i = {12'b0, c_rs1, 3'b000, 5'b1, jalr}; // c.jalr
+                                    default: c2i = {7'b0, c_rs2, c_rs1, 3'b000, c_rs1, r}; // c.add
+                                endcase
+                            end
+                            default: c2i = 0;
+                        endcase
+                    end
+                    3'b110: c2i = {c_swsp_uimm[11:5], c_rs2, 5'b00010, 3'b010, c_swsp_uimm[4:0], s}; // c.swsp
+                    default: c2i = 0;
+                endcase
+            end
+            default: c2i = 0;
+        endcase
+    end
+    endfunction
 
     wire push_rs, push_lsb;
 
