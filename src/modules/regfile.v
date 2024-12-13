@@ -42,8 +42,8 @@ module regfile(
 
     assign search_rob_id_1 = get_dep_1;
     assign search_rob_id_2 = get_dep_2;
-    assign commit_hit1 = commit_ready && commit_rob_id == dep[get_reg_1];
-    assign commit_hit2 = commit_ready && commit_rob_id == dep[get_reg_2];
+    wire commit_hit1 = commit_ready && commit_rob_id == dep[get_reg_1];
+    wire commit_hit2 = commit_ready && commit_rob_id == dep[get_reg_2];
     assign get_val_1 = !has_dep[get_reg_1] ? val[get_reg_1] : commit_hit1 ? commit_val : search_ready_1 ? search_val_1 : 0;
     assign get_val_2 = !has_dep[get_reg_2] ? val[get_reg_2] : commit_hit2 ? commit_val : search_ready_2 ? search_val_2 : 0;
     assign get_dep_1 = dep[get_reg_1];
