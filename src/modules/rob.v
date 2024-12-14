@@ -74,13 +74,11 @@ module rob(
     wire search_lsb_hit1 = lsb_ready && lsb_rob_id == search_rob_id_1;
     wire search_rs_hit2 = rs_ready && rs_rob_id == search_rob_id_2;
     wire search_lsb_hit2 = lsb_ready && lsb_rob_id == search_rob_id_2;
-    wire search_commit_hit1 = commit_ready && commit_rob_id == search_rob_id_1;
-    wire search_commit_hit2 = commit_ready && commit_rob_id == search_rob_id_2;
 
-    assign search_ready_1 = search_commit_hit1 || search_rs_hit1 || search_lsb_hit1 || (busy[search_rob_id_1] && status[search_rob_id_1] == WR) || (busy[search_rob_id_1] && status[search_rob_id_1] == CO);
-    assign search_ready_2 = search_commit_hit2 || search_rs_hit2 || search_lsb_hit2 || (busy[search_rob_id_2] && status[search_rob_id_2] == WR) || (busy[search_rob_id_2] && status[search_rob_id_2] == CO);
-    assign search_val_1 = search_commit_hit1 ? commit_val : search_rs_hit1 ? rs_value : search_lsb_hit1 ? lsb_value : inst_val[search_rob_id_1];
-    assign search_val_2 = search_commit_hit2 ? commit_val : search_rs_hit2 ? rs_value : search_lsb_hit2 ? lsb_value : inst_val[search_rob_id_2];
+    assign search_ready_1 = search_rs_hit1 || search_lsb_hit1 || (busy[search_rob_id_1] && status[search_rob_id_1] == WR) || (busy[search_rob_id_1] && status[search_rob_id_1] == CO);
+    assign search_ready_2 = search_rs_hit2 || search_lsb_hit2 || (busy[search_rob_id_2] && status[search_rob_id_2] == WR) || (busy[search_rob_id_2] && status[search_rob_id_2] == CO);
+    assign search_val_1 = search_rs_hit1 ? rs_value : search_lsb_hit1 ? lsb_value : inst_val[search_rob_id_1];
+    assign search_val_2 = search_rs_hit2 ? rs_value : search_lsb_hit2 ? lsb_value : inst_val[search_rob_id_2];
 
     wire rob_empty = head == tail;
     assign rob_full = tail + 1 == head || tail == `ROB_SIZE - 1 && head == 0;

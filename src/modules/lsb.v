@@ -69,7 +69,6 @@ module lsb(
     reg [31:0] a[0:`LSB_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`LSB_SIZE-1]; // which rob depends on this
     reg val_ready [0:`LSB_SIZE-1];
-    reg working;
 
     assign lsb_full = head == tail + 1 || head == 0 && tail == `LSB_SIZE - 1;
     wire lsb_empty = head == tail;
@@ -108,7 +107,6 @@ module lsb(
             end
             head <= 0;
             tail <= 0;
-            working <= 0;
         end else if (rdy_in) begin
             // update dependence
             for (i = 0; i < `LSB_SIZE; i = i + 1) begin
@@ -151,9 +149,6 @@ module lsb(
             // ram
             if (ls_finished) begin
                 head <= head + 1;
-            end
-            if (working && ls_finished) begin
-                working <= 0;
             end
             // from rob
             if (store_enable && inst_op[head][3]) begin

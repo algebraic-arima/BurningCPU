@@ -34,7 +34,15 @@ module alu(
     
     output reg ready,
     output reg [`ROB_WIDTH-1:0] rob_id,
-    output reg [31:0] value
+    output reg [31:0] value,
+
+    output reg ready_lsb,
+    output reg [`ROB_WIDTH-1:0] rob_id_lsb,
+    output reg [31:0] value_lsb,
+
+    output reg ready_rob,
+    output reg [`ROB_WIDTH-1:0] rob_id_rob,
+    output reg [31:0] value_rob
 );
 
     always @(posedge clk_in) begin
@@ -42,6 +50,12 @@ module alu(
             ready <= 1'b0;
             value <= 32'b0;
             rob_id <= 0;
+            ready_lsb <= 1'b0;
+            value_lsb <= 32'b0;
+            rob_id_lsb <= 0;
+            ready_rob <= 1'b0;
+            value_rob <= 32'b0;
+            rob_id_rob <= 0;
         end else if (rdy_in && calc_enable) begin
             ready <= 1'b1;
             rob_id <= rob_dep;
@@ -65,10 +79,60 @@ module alu(
 
                 default: value <= 32'b0;
             endcase
+            ready_lsb <= 1'b1;
+            rob_id_lsb <= rob_dep;
+            case (op)
+                `BEQ:   value_lsb <= (lhs == rhs) ? true_jaddr : false_jaddr;
+                `BNE:   value_lsb <= (lhs != rhs) ? true_jaddr : false_jaddr;
+                `BLT:   value_lsb <= ($signed(lhs) < $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BGE:   value_lsb <= ($signed(lhs) >= $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BLTU:  value_lsb <= (lhs < rhs) ? true_jaddr : false_jaddr;
+                `BGEU:  value_lsb <= (lhs >= rhs) ? true_jaddr : false_jaddr;
+
+                `ADD:   value_lsb <= lhs + rhs;
+                `SUB:   value_lsb <= lhs - rhs;
+                `SLL:   value_lsb <= lhs << rhs[4:0];
+                `SLT:   value_lsb <= {{31{1'b0}}, $signed(lhs) < $signed(rhs)};
+                `SLTU:  value_lsb <= {{31{1'b0}}, lhs < rhs};
+                `XOR:   value_lsb <= lhs ^ rhs;
+                `SR:    value_lsb <= rhs[10] ? lhs >>> rhs[4:0] : lhs >> rhs[4:0];
+                `OR:    value_lsb <= lhs | rhs;
+                `AND:   value_lsb <= lhs & rhs;
+
+                default: value_lsb <= 32'b0;
+            endcase
+            ready_rob <= 1'b1;
+            rob_id_rob <= rob_dep;
+            case (op)
+                `BEQ:   value_rob <= (lhs == rhs) ? true_jaddr : false_jaddr;
+                `BNE:   value_rob <= (lhs != rhs) ? true_jaddr : false_jaddr;
+                `BLT:   value_rob <= ($signed(lhs) < $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BGE:   value_rob <= ($signed(lhs) >= $signed(rhs)) ? true_jaddr : false_jaddr;
+                `BLTU:  value_rob <= (lhs < rhs) ? true_jaddr : false_jaddr;
+                `BGEU:  value_rob <= (lhs >= rhs) ? true_jaddr : false_jaddr;
+
+                `ADD:   value_rob <= lhs + rhs;
+                `SUB:   value_rob <= lhs - rhs;
+                `SLL:   value_rob <= lhs << rhs[4:0];
+                `SLT:   value_rob <= {{31{1'b0}}, $signed(lhs) < $signed(rhs)};
+                `SLTU:  value_rob <= {{31{1'b0}}, lhs < rhs};
+                `XOR:   value_rob <= lhs ^ rhs;
+                `SR:    value_rob <= rhs[10] ? lhs >>> rhs[4:0] : lhs >> rhs[4:0];
+                `OR:    value_rob <= lhs | rhs;
+                `AND:   value_rob <= lhs & rhs;
+
+                default: value_rob <= 32'b0;
+            endcase
         end else begin
             ready <= 1'b0;
             value <= 32'b0;
             rob_id <= 0;
+            ready_lsb <= 1'b0;
+            value_lsb <= 32'b0;
+            rob_id_lsb <= 0;
+            ready_rob <= 1'b0;
+            value_rob <= 32'b0;
+            rob_id_rob <= 0;
         end
     end
 

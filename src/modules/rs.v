@@ -33,7 +33,17 @@ module rs (
     // broadcast that a rob is ready
     output wire ready,
     output wire [`ROB_WIDTH-1:0] dest_rob_id,
-    output wire [31:0] value
+    output wire [31:0] value,
+
+    // broadcast to lsb
+    output wire ready_lsb,
+    output wire [`ROB_WIDTH-1:0] dest_rob_id_lsb,
+    output wire [31:0] value_lsb,
+
+    // broadcast to rob
+    output wire ready_rob,
+    output wire [`ROB_WIDTH-1:0] dest_rob_id_rob,
+    output wire [31:0] value_rob
 
 );
 
@@ -45,7 +55,6 @@ module rs (
     reg dk[0:`RS_SIZE-1];
     reg [`ROB_WIDTH-1:0] qj[0:`RS_SIZE-1]; // dependence of vj
     reg [`ROB_WIDTH-1:0] qk[0:`RS_SIZE-1];
-    reg [31:0] a[0:`RS_SIZE-1];
     reg [31:0] true_jaddr[0:`RS_SIZE-1];
     reg [31:0] false_jaddr[0:`RS_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`RS_SIZE-1]; // which rob depends on this
@@ -82,25 +91,40 @@ module rs (
         assign rs_full = !has_idle;
     endgenerate
 
+    reg enable;
+    reg [31:0] lhs,rhs;
+    reg [4:0] op;
+    reg [`ROB_WIDTH-1:0] rob_dep;
+    reg [31:0] true_j, false_j;
+
+
     alu alu0(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .rdy_in(rdy_in),
         
-        .calc_enable(calc_enable),
+        .calc_enable(enable),
         .clear(clear),
 
-        .lhs(vj[pos_calc]),
-        .rhs(vk[pos_calc]),
-        .op(inst_type[pos_calc]),
-        .rob_dep(rob_dest[pos_calc]),
+        .lhs(lhs),
+        .rhs(rhs),
+        .op(op),
+        .rob_dep(rob_dep),
 
-        .true_jaddr(true_jaddr[pos_calc]),
-        .false_jaddr(false_jaddr[pos_calc]),
+        .true_jaddr(true_j),
+        .false_jaddr(false_j),
 
         .ready(ready),
         .rob_id(dest_rob_id),
-        .value(value)
+        .value(value),
+
+        .ready_lsb(ready_lsb),
+        .rob_id_lsb(dest_rob_id_lsb),
+        .value_lsb(value_lsb),
+
+        .ready_rob(ready_rob),
+        .rob_id_rob(dest_rob_id_rob),
+        .value_rob(value_rob)
         
     );
 
@@ -117,7 +141,6 @@ module rs (
                 dk[i] <= 0;
                 qj[i] <= 0;
                 qk[i] <= 0;
-                a[i] <= 0;
                 rob_dest[i] <= 0;
             end     
         end else if (rdy_in) begin
@@ -158,8 +181,18 @@ module rs (
                 true_jaddr[pos_idle] <= tja;
                 false_jaddr[pos_idle] <= fja;
             end
+            // calc
             if (calc_enable) begin
                 busy[pos_calc] <= 0;
+                enable <= 1;
+                lhs <= vj[pos_calc];
+                rhs <= vk[pos_calc];
+                op <= inst_type[pos_calc];
+                rob_dep <= rob_dest[pos_calc];
+                true_j <= true_jaddr[pos_calc];
+                false_j <= false_jaddr[pos_calc];
+            end else begin
+                enable <= 0;
             end
         end
     end

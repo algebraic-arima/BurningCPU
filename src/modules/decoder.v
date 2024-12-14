@@ -82,21 +82,8 @@ module decoder(
     localparam r = 7'b0110011;    
 
     reg freezed;
-    reg [31:0] last_inst;
     reg [31:0] inst_addr = 0; // the addr of cur inst
     wire [31:0] next_addr; // the addr of next inst
-    wire [31:0] inst = is_c ? c_inst_val : inst_val;
-
-    wire [6:0] op_code = inst[6:0];
-    wire [4:0] rd = inst[11:7];
-    wire [2:0] op_type = inst[14:12];
-    wire [4:0] rs1 = inst[19:15];
-    wire [4:0] rs2 = inst[24:20];
-    wire [31:0] imm_u = {inst[31:12], 12'b0};
-    wire [31:0] imm_j = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
-    wire [31:0] imm_i = {{20{inst[31]}}, inst[31:20]};
-    wire [31:0] imm_b = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
-    wire [31:0] imm_s = {{20{inst[31]}}, inst[31:25], inst[11:7]};
 
     wire [1:0] c_op_code = inst_val[1:0];
     wire [2:0] c_funct3 = inst_val[15:13];
@@ -115,6 +102,18 @@ module decoder(
     wire [4:0] c_rs2_p = {2'b01, inst_val[4:2]}; 
 
     wire [31:0] c_inst_val = c2i(inst_val);
+    wire [31:0] inst = is_c ? c_inst_val : inst_val;
+    
+    wire [6:0] op_code = inst[6:0];
+    wire [4:0] rd = inst[11:7];
+    wire [2:0] op_type = inst[14:12];
+    wire [4:0] rs1 = inst[19:15];
+    wire [4:0] rs2 = inst[24:20];
+    wire [31:0] imm_u = {inst[31:12], 12'b0};
+    wire [31:0] imm_j = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
+    wire [31:0] imm_i = {{20{inst[31]}}, inst[31:20]};
+    wire [31:0] imm_b = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+    wire [31:0] imm_s = {{20{inst[31]}}, inst[31:25], inst[11:7]};
 
     function [31:0] c2i (
         input [31:0] c_inst
@@ -200,7 +199,12 @@ module decoder(
     reg rs1_has_dep, rs2_has_dep;
     reg [`ROB_WIDTH-1:0] rs1_dep, rs2_dep;
 
-    reg working;
+    // reg copy
+    reg [31:0] rs1_val_c;
+    reg [31:0] rs2_val_c;
+    reg rs1_has_dep_c, rs2_has_dep_c;
+    reg [`ROB_WIDTH-1:0] rs1_dep_c, rs2_dep_c;
+
 
     assign get_reg_1 = rs1;
     assign get_reg_2 = rs2;
@@ -215,12 +219,12 @@ module decoder(
     assign rs_dep_k = rs2_dep;
     assign rs_rob_id = empty_rob_id;
 
-    assign lsb_val_j = rs1_val;
-    assign lsb_val_k = rs2_val;
-    assign lsb_has_dep_j = rs1_has_dep;
-    assign lsb_has_dep_k = rs2_has_dep;
-    assign lsb_dep_j = rs1_dep;
-    assign lsb_dep_k = rs2_dep;
+    assign lsb_val_j = rs1_val_c;
+    assign lsb_val_k = rs2_val_c;
+    assign lsb_has_dep_j = rs1_has_dep_c;
+    assign lsb_has_dep_k = rs2_has_dep_c;
+    assign lsb_dep_j = rs1_dep_c;
+    assign lsb_dep_k = rs2_dep_c;
     assign lsb_rob_id = empty_rob_id;
 
     wire push_reg_dep = !(op_code == s || op_code == b);
@@ -244,7 +248,6 @@ module decoder(
             rs2_has_dep <= 0;
             rs1_dep <= 0;
             rs2_dep <= 0;
-            last_inst <= 0;
             inst_addr <= 0;
             reg_issue_ready <= 0;
             reg_rd <= 0;
@@ -264,9 +267,7 @@ module decoder(
             lsb_type <= 4'b0;
             lsb_imm <= 0;
             
-            working <= 0;
         end else if (rdy_in && clear) begin
-            working <= 0;
             rob_issue_ready <= 0;
             // clear will cause memctrl to pause
             inst_addr <= corr_jump_addr;
@@ -275,7 +276,6 @@ module decoder(
             reg_issue_ready <= 0;
             freezed <= 0;
         end else if (inst_ready && work_enable) begin
-            working <= 1;
             freezed <= 0;
             inst_addr <= next_addr;
             reg_issue_ready <= push_reg_dep;
@@ -303,11 +303,17 @@ module decoder(
             lsb_type <= {op_code == s ? 1'b1 : 1'b0, op_type};
 
             rs1_val <= op_code == lui ? 0 : (op_code == auipc || op_code == jal) ? inst_addr : get_val_1;
+            rs1_val_c <= op_code == lui ? 0 : (op_code == auipc || op_code == jal) ? inst_addr : get_val_1;
             rs2_val <= (op_code == lui || op_code == auipc) ? imm_u : (op_code == jal) ? is_c ? 2 : 4 : (op_code == jalr || op_code == l || op_code == im) ? imm_i : get_val_2;
+            rs2_val_c <= (op_code == lui || op_code == auipc) ? imm_u : (op_code == jal) ? is_c ? 2 : 4 : (op_code == jalr || op_code == l || op_code == im) ? imm_i : get_val_2;
             rs1_has_dep <= (op_code == lui || op_code == auipc || op_code == jal) ? 0 : has_dep_1;
+            rs1_has_dep_c <= (op_code == lui || op_code == auipc || op_code == jal) ? 0 : has_dep_1;
             rs2_has_dep <= (op_code == b || op_code == s || op_code == r) ? has_dep_2 : 0;
+            rs2_has_dep_c <= (op_code == b || op_code == s || op_code == r) ? has_dep_2 : 0;
             rs1_dep <= get_dep_1;
+            rs1_dep_c <= get_dep_1;
             rs2_dep <= get_dep_2;
+            rs2_dep_c <= get_dep_2;
             if (op_code == b) begin
                 rs_true_addr <= inst_addr + imm_b;
                 if (is_c) begin

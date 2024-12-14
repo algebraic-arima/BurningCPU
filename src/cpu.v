@@ -164,10 +164,20 @@ module cpu(
     wire [31:0] dec2rs_true_jump_addr;
     wire [31:0] dec2rs_false_jump_addr;
 
-    // rs broadcast
+    // rs broadcast to itself
     wire rs_broadcast_ready;
     wire [`ROB_WIDTH-1:0] rs_broadcast_rob_id;
     wire [31:0] rs_broadcast_value; 
+
+    // rs broadcast to lsb
+    wire rs_broadcast_ready_lsb;
+    wire [`ROB_WIDTH-1:0] rs_broadcast_rob_id_lsb;
+    wire [31:0] rs_broadcast_value_lsb;
+
+    // rs broadcast to rob
+    wire rs_broadcast_ready_rob;
+    wire [`ROB_WIDTH-1:0] rs_broadcast_rob_id_rob;
+    wire [31:0] rs_broadcast_value_rob;
 
     // dec lsb
     wire dec2lsb_issue_ready;
@@ -305,9 +315,9 @@ module cpu(
         .melt(rob2dec_melt),
         .corr_jump_addr(rob2dec_corr_jump_addr),
 
-        .rs_ready(rs_broadcast_ready),
-        .rs_rob_id(rs_broadcast_rob_id),
-        .rs_value(rs_broadcast_value),
+        .rs_ready(rs_broadcast_ready_rob),
+        .rs_rob_id(rs_broadcast_rob_id_rob),
+        .rs_value(rs_broadcast_value_rob),
 
         .lsb_ready(lsb_broadcast_ready),
         .lsb_rob_id(lsb_broadcast_rob_id),
@@ -360,7 +370,15 @@ module cpu(
 
         .ready(rs_broadcast_ready),
         .dest_rob_id(rs_broadcast_rob_id),
-        .value(rs_broadcast_value)
+        .value(rs_broadcast_value),
+
+        .ready_lsb(rs_broadcast_ready_lsb),
+        .dest_rob_id_lsb(rs_broadcast_rob_id_lsb),
+        .value_lsb(rs_broadcast_value_lsb),
+
+        .ready_rob(rs_broadcast_ready_rob),
+        .dest_rob_id_rob(rs_broadcast_rob_id_rob),
+        .value_rob(rs_broadcast_value_rob)
     );
 
     lsb lsb0(
@@ -383,9 +401,9 @@ module cpu(
         .rob_id(dec2lsb_rob_id),
         .imm(dec2lsb_imm),
 
-        .rs_ready(rs_broadcast_ready),
-        .rs_rob_id(rs_broadcast_rob_id),
-        .rs_value(rs_broadcast_value),
+        .rs_ready(rs_broadcast_ready_lsb),
+        .rs_rob_id(rs_broadcast_rob_id_lsb),
+        .rs_value(rs_broadcast_value_lsb),
 
         .lsb_ready(lsb_broadcast_ready),
         .lsb_rob_id(lsb_broadcast_rob_id),
