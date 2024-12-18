@@ -187,13 +187,21 @@ module cpu(
     // rob lsb
     wire rob2lsb_store_enable;
 
-    // rob rs lsb
-    wire rob2_search_has_dep_1;
-    wire [`ROB_WIDTH-1:0] rob2_search_dep_1;
-    wire [31:0] rob2_search_val_1;
-    wire rob2_search_has_dep_2;
-    wire [`ROB_WIDTH-1:0] rob2_search_dep_2;
-    wire [31:0] rob2_search_val_2;
+    // rob rs
+    wire rob2rs_search_has_dep_1;
+    wire [`ROB_WIDTH-1:0] rob2rs_search_dep_1;
+    wire [31:0] rob2rs_search_val_1;
+    wire rob2rs_search_has_dep_2;
+    wire [`ROB_WIDTH-1:0] rob2rs_search_dep_2;
+    wire [31:0] rob2rs_search_val_2;
+
+    // rob lsb
+    wire rob2lsb_search_has_dep_1;
+    wire [`ROB_WIDTH-1:0] rob2lsb_search_dep_1;
+    wire [31:0] rob2lsb_search_val_1;
+    wire rob2lsb_search_has_dep_2;
+    wire [`ROB_WIDTH-1:0] rob2lsb_search_dep_2;
+    wire [31:0] rob2lsb_search_val_2;
 
     decoder dec0(
         .clk_in(clk_in),
@@ -317,12 +325,19 @@ module cpu(
         .search_rob_id_2(reg2rob_search_rob_id_2),
         .search_in_val_2(reg2rob_search_in_val_2),
 
-        .search_has_dep_1(rob2_search_has_dep_1),
-        .search_dep_1(rob2_search_dep_1),
-        .search_val_1(rob2_search_val_1),
-        .search_has_dep_2(rob2_search_has_dep_2),
-        .search_dep_2(rob2_search_dep_2),
-        .search_val_2(rob2_search_val_2)
+        .search_has_dep_1_rs(rob2rs_search_has_dep_1),
+        .search_dep_1_rs(rob2rs_search_dep_1),
+        .search_val_1_rs(rob2rs_search_val_1),
+        .search_has_dep_2_rs(rob2rs_search_has_dep_2),
+        .search_dep_2_rs(rob2rs_search_dep_2),
+        .search_val_2_rs(rob2rs_search_val_2),
+
+        .search_has_dep_1_lsb(rob2lsb_search_has_dep_1),
+        .search_dep_1_lsb(rob2lsb_search_dep_1),
+        .search_val_1_lsb(rob2lsb_search_val_1),
+        .search_has_dep_2_lsb(rob2lsb_search_has_dep_2),
+        .search_dep_2_lsb(rob2lsb_search_dep_2),
+        .search_val_2_lsb(rob2lsb_search_val_2)
 
     );
 
@@ -341,12 +356,12 @@ module cpu(
         .tja(dec2rs_true_jump_addr),
         .fja(dec2rs_false_jump_addr),
 
-        .has_dep_j(rob2_search_has_dep_1),
-        .dep_j(rob2_search_dep_1),
-        .val_j(rob2_search_val_1),
-        .has_dep_k(rob2_search_has_dep_2),
-        .dep_k(rob2_search_dep_2),
-        .val_k(rob2_search_val_2),
+        .has_dep_j(rob2rs_search_has_dep_1),
+        .dep_j(rob2rs_search_dep_1),
+        .val_j(rob2rs_search_val_1),
+        .has_dep_k(rob2rs_search_has_dep_2),
+        .dep_k(rob2rs_search_dep_2),
+        .val_k(rob2rs_search_val_2),
 
         .rs_ready(rs_broadcast_ready),
         .rs_rob_id(rs_broadcast_rob_id),
@@ -383,12 +398,12 @@ module cpu(
         .rob_id(dec2lsb_rob_id),
         .imm(dec2lsb_imm),        
 
-        .has_dep_j(rob2_search_has_dep_1),
-        .dep_j(rob2_search_dep_1),
-        .val_j(rob2_search_val_1),
-        .has_dep_k(rob2_search_has_dep_2),
-        .dep_k(rob2_search_dep_2),
-        .val_k(rob2_search_val_2),
+        .has_dep_j(rob2lsb_search_has_dep_1),
+        .dep_j(rob2lsb_search_dep_1),
+        .val_j(rob2lsb_search_val_1),
+        .has_dep_k(rob2lsb_search_has_dep_2),
+        .dep_k(rob2lsb_search_dep_2),
+        .val_k(rob2lsb_search_val_2),
 
         .rs_ready(rs_broadcast_ready_lsb),
         .rs_rob_id(rs_broadcast_rob_id_lsb),

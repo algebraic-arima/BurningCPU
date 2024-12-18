@@ -48,13 +48,21 @@ module rob(
     input wire [`ROB_WIDTH-1:0] search_rob_id_2,
     input wire [31:0] search_in_val_2,
 
-    // to rs and lsb
-    output reg search_has_dep_1,
-    output reg [`ROB_WIDTH-1:0] search_dep_1,
-    output reg [31:0] search_val_1,
-    output reg search_has_dep_2,
-    output reg [`ROB_WIDTH-1:0] search_dep_2,
-    output reg [31:0] search_val_2
+    // to rs
+    output reg search_has_dep_1_rs,
+    output reg [`ROB_WIDTH-1:0] search_dep_1_rs,
+    output reg [31:0] search_val_1_rs,
+    output reg search_has_dep_2_rs,
+    output reg [`ROB_WIDTH-1:0] search_dep_2_rs,
+    output reg [31:0] search_val_2_rs,
+
+    // to lsb
+    output reg search_has_dep_1_lsb,
+    output reg [`ROB_WIDTH-1:0] search_dep_1_lsb,
+    output reg [31:0] search_val_1_lsb,
+    output reg search_has_dep_2_lsb,
+    output reg [`ROB_WIDTH-1:0] search_dep_2_lsb,
+    output reg [31:0] search_val_2_lsb
 
 );
 
@@ -107,36 +115,49 @@ module rob(
             commit_val <= 0; 
             melt <= 0;
             corr_jump_addr <= 0;
-            search_has_dep_1 <= 0;
-            search_dep_1 <= 0;
-            search_val_1 <= 0;
-            search_has_dep_2 <= 0;
-            search_dep_2 <= 0;
-            search_val_2 <= 0;
+            search_has_dep_1_rs <= 0;
+            search_dep_1_rs <= 0;
+            search_val_1_rs <= 0;
+            search_has_dep_2_rs <= 0;
+            search_dep_2_rs <= 0;
+            search_val_2_rs <= 0;
+            search_has_dep_1_lsb <= 0;
+            search_dep_1_lsb <= 0;
+            search_val_1_lsb <= 0;
+            search_has_dep_2_lsb <= 0;
+            search_dep_2_lsb <= 0;
+            search_val_2_lsb <= 0;
             for (i = 0; i < `ROB_SIZE; i = i + 1) begin
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
                 inst_val[i] <= 0;
-                inst_addr[i] <= 0;
+                // inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
                 status[i] <= 0;
             end
             clear <= 0; // clear only appears for 1 cycle
         end else if (rdy_in) begin
             // answer query
-            search_has_dep_1 <= search_in_has_dep_1 && !search_ready_1;
-            search_dep_1 <= !search_in_has_dep_1 ? 0 : search_ready_1 ? 0 : search_rob_id_1;
-            search_val_1 <= !search_in_has_dep_1 ? search_in_val_1 : search_ready_1 ? local_val_1 : 0;
-            search_has_dep_2 <= search_in_has_dep_2 && !search_ready_2;
-            search_dep_2 <= !search_in_has_dep_2 ? 0 : search_ready_2 ? 0 : search_rob_id_2;
-            search_val_2 <= !search_in_has_dep_2 ? search_in_val_2 : search_ready_2 ? local_val_2 : 0;
+            search_has_dep_1_rs <= search_in_has_dep_1 && !search_ready_1;
+            search_dep_1_rs <= !search_in_has_dep_1 ? 0 : search_ready_1 ? 0 : search_rob_id_1;
+            search_val_1_rs <= !search_in_has_dep_1 ? search_in_val_1 : search_ready_1 ? local_val_1 : 0;
+            search_has_dep_2_rs <= search_in_has_dep_2 && !search_ready_2;
+            search_dep_2_rs <= !search_in_has_dep_2 ? 0 : search_ready_2 ? 0 : search_rob_id_2;
+            search_val_2_rs <= !search_in_has_dep_2 ? search_in_val_2 : search_ready_2 ? local_val_2 : 0;
+            search_has_dep_1_lsb <= search_in_has_dep_1 && !search_ready_1;
+            search_dep_1_lsb <= !search_in_has_dep_1 ? 0 : search_ready_1 ? 0 : search_rob_id_1;
+            search_val_1_lsb <= !search_in_has_dep_1 ? search_in_val_1 : search_ready_1 ? local_val_1 : 0;
+            search_has_dep_2_lsb <= search_in_has_dep_2 && !search_ready_2;
+            search_dep_2_lsb <= !search_in_has_dep_2 ? 0 : search_ready_2 ? 0 : search_rob_id_2;
+            search_val_2_lsb <= !search_in_has_dep_2 ? search_in_val_2 : search_ready_2 ? local_val_2 : 0;
+            
             // update
             if(dec_ready) begin
                 busy[tail] <= 1;
                 inst_rd[tail] <= rd;
                 inst_val[tail] <= 0;
                 jump_addr[tail] <= j_addr;
-                inst_addr[tail] <= addr;
+                // inst_addr[tail] <= addr;
                 inst_type[tail] <= type;
                 status[tail] <= IS;
                 tail <= tail + 1;
@@ -156,7 +177,7 @@ module rob(
                 head <= head + 1;
                 busy[head] <= 0;
                 commit_rob_id <= head;
-                commit_addr <= inst_addr[head];
+                // commit_addr <= inst_addr[head];
                 melt <= inst_type[head] == JALR;
                 if (inst_type[head] == BR) begin
                     commit_ready <= 0;

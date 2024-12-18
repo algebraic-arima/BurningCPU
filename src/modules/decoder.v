@@ -180,11 +180,6 @@ module decoder(
 
     wire push_rs, push_lsb;
 
-    reg [31:0] rs1_val;
-    reg [31:0] rs2_val;
-    reg rs1_has_dep, rs2_has_dep;
-    reg [`ROB_WIDTH-1:0] rs1_dep, rs2_dep;
-
     assign reg_rob_id = empty_rob_id;
     assign rs_rob_id = empty_rob_id;
     assign lsb_rob_id = empty_rob_id;
@@ -211,12 +206,6 @@ module decoder(
     always @(posedge clk_in) begin: Main
         if (rst_in) begin
             freezed <= 0;
-            rs1_val <= 0;
-            rs2_val <= 0;
-            rs1_has_dep <= 0;
-            rs2_has_dep <= 0;
-            rs1_dep <= 0;
-            rs2_dep <= 0;
             inst_addr <= 0;
             reg_issue_ready <= 0;
             reg_rd <= 0;
