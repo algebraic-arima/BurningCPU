@@ -115,14 +115,12 @@ module cpu(
 
     
     // dec reg
+    wire dec2reg_has_dep_1;
     wire [4:0] dec2reg_get_reg_1;
+    wire [31:0] dec2reg_val_1;
+    wire dec2reg_has_dep_2;
     wire [4:0] dec2reg_get_reg_2;
-    wire reg2dec_has_dep_1;
-    wire reg2dec_has_dep_2;
-    wire [31:0] reg2dec_val_1;
-    wire [31:0] reg2dec_val_2;
-    wire [`ROB_WIDTH-1:0] reg2dec_dep_1;
-    wire [`ROB_WIDTH-1:0] reg2dec_dep_2;
+    wire [31:0] dec2reg_val_2;
 
     wire dec2reg_issue_ready;
     wire [4:0] dec2reg_rd;
@@ -130,11 +128,13 @@ module cpu(
 
     // reg rob
     wire [`ROB_WIDTH-1:0] reg2rob_search_rob_id_1;
-    wire reg2rob_search_ready_1;
-    wire [31:0] reg2rob_search_val_1;
+    wire reg2rob_search_in_has_dep_1;
+    wire [31:0] reg2rob_search_in_val_1;
     wire [`ROB_WIDTH-1:0] reg2rob_search_rob_id_2;
-    wire reg2rob_search_ready_2;
-    wire [31:0] reg2rob_search_val_2;
+    wire reg2rob_search_in_has_dep_2;
+    wire [31:0] reg2rob_search_in_val_2;
+
+    // rob reg
     wire rob2reg_commit_ready;
     wire [`ROB_WIDTH-1:0] rob2reg_commit_rob_id;
     wire [4:0] rob2reg_commit_reg_id;
@@ -154,12 +154,6 @@ module cpu(
     // dec rs
     wire dec2rs_issue_ready;
     wire [4:0] dec2rs_type;
-    wire [31:0] dec2rs_val_j;
-    wire [31:0] dec2rs_val_k;
-    wire dec2rs_has_dep_j;
-    wire dec2rs_has_dep_k;
-    wire [`ROB_WIDTH-1:0] dec2rs_dep_j;
-    wire [`ROB_WIDTH-1:0] dec2rs_dep_k;
     wire [`ROB_WIDTH-1:0] dec2rs_rob_id;
     wire [31:0] dec2rs_true_jump_addr;
     wire [31:0] dec2rs_false_jump_addr;
@@ -182,12 +176,6 @@ module cpu(
     // dec lsb
     wire dec2lsb_issue_ready;
     wire [3:0] dec2lsb_type;
-    wire [31:0] dec2lsb_val_j;
-    wire [31:0] dec2lsb_val_k;
-    wire dec2lsb_has_dep_j;
-    wire dec2lsb_has_dep_k;
-    wire [`ROB_WIDTH-1:0] dec2lsb_dep_j;
-    wire [`ROB_WIDTH-1:0] dec2lsb_dep_k;
     wire [`ROB_WIDTH-1:0] dec2lsb_rob_id;
     wire [31:0] dec2lsb_imm;
     
@@ -198,6 +186,14 @@ module cpu(
 
     // rob lsb
     wire rob2lsb_store_enable;
+
+    // rob rs lsb
+    wire rob2_search_has_dep_1;
+    wire [`ROB_WIDTH-1:0] rob2_search_dep_1;
+    wire [31:0] rob2_search_val_1;
+    wire rob2_search_has_dep_2;
+    wire [`ROB_WIDTH-1:0] rob2_search_dep_2;
+    wire [31:0] rob2_search_val_2;
 
     decoder dec0(
         .clk_in(clk_in),
@@ -230,12 +226,6 @@ module cpu(
         .rs_full(rs_full),
         .rs_issue_ready(dec2rs_issue_ready),
         .rs_type(dec2rs_type),
-        .rs_val_j(dec2rs_val_j),
-        .rs_val_k(dec2rs_val_k),
-        .rs_has_dep_j(dec2rs_has_dep_j),
-        .rs_has_dep_k(dec2rs_has_dep_k),
-        .rs_dep_j(dec2rs_dep_j),
-        .rs_dep_k(dec2rs_dep_k),
         .rs_rob_id(dec2rs_rob_id),
         .rs_true_addr(dec2rs_true_jump_addr),
         .rs_false_addr(dec2rs_false_jump_addr),
@@ -243,23 +233,15 @@ module cpu(
         .lsb_full(lsb_full),
         .lsb_issue_ready(dec2lsb_issue_ready),
         .lsb_type(dec2lsb_type),
-        .lsb_val_j(dec2lsb_val_j),
-        .lsb_val_k(dec2lsb_val_k),
-        .lsb_has_dep_j(dec2lsb_has_dep_j),
-        .lsb_has_dep_k(dec2lsb_has_dep_k),
-        .lsb_dep_j(dec2lsb_dep_j),
-        .lsb_dep_k(dec2lsb_dep_k),
         .lsb_rob_id(dec2lsb_rob_id),
         .lsb_imm(dec2lsb_imm),
 
+        .has_dep_1(dec2reg_has_dep_1),
         .get_reg_1(dec2reg_get_reg_1),
+        .val_1(dec2reg_val_1),
+        .has_dep_2(dec2reg_has_dep_2),
         .get_reg_2(dec2reg_get_reg_2),
-        .get_val_1(reg2dec_val_1),
-        .get_val_2(reg2dec_val_2),
-        .has_dep_1(reg2dec_has_dep_1),
-        .has_dep_2(reg2dec_has_dep_2),
-        .get_dep_1(reg2dec_dep_1),
-        .get_dep_2(reg2dec_dep_2)
+        .val_2(dec2reg_val_2)
     );
 
     regfile reg0(
@@ -274,25 +256,23 @@ module cpu(
         .commit_val(rob2reg_commit_val),
         .commit_rob_id(rob2reg_commit_rob_id),
 
-        .search_rob_id_1(reg2rob_search_rob_id_1),
-        .search_ready_1(reg2rob_search_ready_1),
-        .search_val_1(reg2rob_search_val_1),
-        .search_rob_id_2(reg2rob_search_rob_id_2),
-        .search_ready_2(reg2rob_search_ready_2),
-        .search_val_2(reg2rob_search_val_2),
-
         .issue_reg_ready(dec2reg_issue_ready),
         .issue_reg_rd(dec2reg_rd),
         .issue_rob_id(dec2reg_rob_id),
 
+        .has_dep_1(dec2reg_has_dep_1),
         .get_reg_1(dec2reg_get_reg_1),
-        .get_val_1(reg2dec_val_1),
-        .has_dep_1(reg2dec_has_dep_1),
-        .get_dep_1(reg2dec_dep_1),
+        .val_1(dec2reg_val_1),
+        .has_dep_2(dec2reg_has_dep_2),
         .get_reg_2(dec2reg_get_reg_2),
-        .get_val_2(reg2dec_val_2),
-        .has_dep_2(reg2dec_has_dep_2),
-        .get_dep_2(reg2dec_dep_2)
+        .val_2(dec2reg_val_2),
+
+        .search_has_dep_1(reg2rob_search_in_has_dep_1),
+        .search_rob_id_1(reg2rob_search_rob_id_1),
+        .tmp_val_1(reg2rob_search_in_val_1),
+        .search_has_dep_2(reg2rob_search_in_has_dep_2),
+        .search_rob_id_2(reg2rob_search_rob_id_2),
+        .tmp_val_2(reg2rob_search_in_val_2)
 
     );
 
@@ -330,12 +310,19 @@ module cpu(
         .commit_val(rob2reg_commit_val),
         .commit_rob_id(rob2reg_commit_rob_id),
 
+        .search_in_has_dep_1(reg2rob_search_in_has_dep_1),
         .search_rob_id_1(reg2rob_search_rob_id_1),
+        .search_in_val_1(reg2rob_search_in_val_1),
+        .search_in_has_dep_2(reg2rob_search_in_has_dep_2),
         .search_rob_id_2(reg2rob_search_rob_id_2),
-        .search_ready_1(reg2rob_search_ready_1),
-        .search_ready_2(reg2rob_search_ready_2),
-        .search_val_1(reg2rob_search_val_1),
-        .search_val_2(reg2rob_search_val_2)
+        .search_in_val_2(reg2rob_search_in_val_2),
+
+        .search_has_dep_1(rob2_search_has_dep_1),
+        .search_dep_1(rob2_search_dep_1),
+        .search_val_1(rob2_search_val_1),
+        .search_has_dep_2(rob2_search_has_dep_2),
+        .search_dep_2(rob2_search_dep_2),
+        .search_val_2(rob2_search_val_2)
 
     );
 
@@ -350,15 +337,16 @@ module cpu(
 
         .dec_ready(dec2rs_issue_ready),
         .type(dec2rs_type),
-        .val_j(dec2rs_val_j),
-        .val_k(dec2rs_val_k),
-        .has_dep_j(dec2rs_has_dep_j),
-        .has_dep_k(dec2rs_has_dep_k),
-        .dep_j(dec2rs_dep_j),
-        .dep_k(dec2rs_dep_k),
         .rob_id(dec2rs_rob_id),
         .tja(dec2rs_true_jump_addr),
         .fja(dec2rs_false_jump_addr),
+
+        .has_dep_j(rob2_search_has_dep_1),
+        .dep_j(rob2_search_dep_1),
+        .val_j(rob2_search_val_1),
+        .has_dep_k(rob2_search_has_dep_2),
+        .dep_k(rob2_search_dep_2),
+        .val_k(rob2_search_val_2),
 
         .rs_ready(rs_broadcast_ready),
         .rs_rob_id(rs_broadcast_rob_id),
@@ -392,14 +380,15 @@ module cpu(
 
         .dec_ready(dec2lsb_issue_ready),
         .type(dec2lsb_type),
-        .val_j(dec2lsb_val_j),
-        .val_k(dec2lsb_val_k),
-        .has_dep_j(dec2lsb_has_dep_j),
-        .has_dep_k(dec2lsb_has_dep_k),
-        .dep_j(dec2lsb_dep_j),
-        .dep_k(dec2lsb_dep_k),
         .rob_id(dec2lsb_rob_id),
-        .imm(dec2lsb_imm),
+        .imm(dec2lsb_imm),        
+
+        .has_dep_j(rob2_search_has_dep_1),
+        .dep_j(rob2_search_dep_1),
+        .val_j(rob2_search_val_1),
+        .has_dep_k(rob2_search_has_dep_2),
+        .dep_k(rob2_search_dep_2),
+        .val_k(rob2_search_val_2),
 
         .rs_ready(rs_broadcast_ready_lsb),
         .rs_rob_id(rs_broadcast_rob_id_lsb),

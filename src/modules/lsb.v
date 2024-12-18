@@ -19,14 +19,16 @@ module lsb(
     // from decoder
     input wire dec_ready,
     input wire [3:0] type,
-    input wire [31:0] val_j, // store / load base addr reg
-    input wire [31:0] val_k, // store val / load imm
-    input wire has_dep_j,
-    input wire has_dep_k,
-    input wire [`ROB_WIDTH-1:0] dep_j,
-    input wire [`ROB_WIDTH-1:0] dep_k,
     input wire [`ROB_WIDTH-1:0] rob_id,
     input wire [31:0] imm, // store imm
+
+    // from rob, issue query
+    input wire has_dep_j,
+    input wire [`ROB_WIDTH-1:0] dep_j,
+    input wire [31:0] val_j, // store / load base addr reg
+    input wire has_dep_k,
+    input wire [`ROB_WIDTH-1:0] dep_k,
+    input wire [31:0] val_k, // store val / load imm
 
     // from rs
     input wire rs_ready,
@@ -68,15 +70,15 @@ module lsb(
     reg [`ROB_WIDTH-1:0] qk[0:`LSB_SIZE-1];
     reg [31:0] a[0:`LSB_SIZE-1];
     reg [`ROB_WIDTH-1:0] rob_dest[0:`LSB_SIZE-1]; // which rob depends on this
-    reg val_ready [0:`LSB_SIZE-1];
+    reg exe_ready [0:`LSB_SIZE-1];
 
     assign lsb_full = head == tail + 1 || head == 0 && tail == `LSB_SIZE - 1;
     wire lsb_empty = head == tail;
     wire [`LSB_WIDTH-1:0] next_head = head + 1 == `LSB_SIZE ? 0 : head + 1;
 
-    wire ls_e = lsb_empty ? 0 : inst_op[head][3] ? (val_ready[head] && !dj[head] && !dk[head]) : (!dj[head] && !dk[head]);
-    wire ls_next_e = (lsb_empty || next_head == tail) ? 0 : 
-                inst_op[next_head][3] ? (val_ready[next_head] && !dj[next_head] && !dk[next_head]) : (!dj[next_head] && !dk[next_head]);
+    wire ls_e = !lsb_empty && (exe_ready[head] && !dj[head] && !dk[head]);
+    wire ls_next_e = !(lsb_empty || next_head == tail) && 
+                (exe_ready[next_head] && !dj[next_head] && !dk[next_head]);
     wire [31:0] ls_a = inst_op[head][3] ? (vj[head] + a[head]) : (vj[head] + vk[head]);
     wire [31:0] ls_next_a = inst_op[next_head][3] ? (vj[next_head] + a[next_head]) : (vj[next_head] + vk[next_head]);
 
@@ -103,7 +105,7 @@ module lsb(
                 qk[i] <= 0;
                 a[i] <= 0;
                 rob_dest[i] <= 0;
-                val_ready[i] <= 0;
+                exe_ready[i] <= 0;
             end
             head <= 0;
             tail <= 0;
@@ -143,7 +145,7 @@ module lsb(
                 qk[tail] <= dep_k;
                 a[tail] <= imm;
                 rob_dest[tail] <= rob_id;
-                val_ready[tail] <= 0;
+                exe_ready[tail] <= !type[3];
                 tail <= tail + 1;
             end
             // ram
@@ -152,7 +154,7 @@ module lsb(
             end
             // from rob
             if (store_enable && inst_op[head][3]) begin
-                val_ready[head] <= 1;
+                exe_ready[head] <= 1;
             end
             // broadcast
             if (busy[head] && ls_finished) begin
@@ -169,5 +171,62 @@ module lsb(
             end
         end
     end
+
+    wire [31:0] vj0 = vj[0];
+    wire [31:0] vj1 = vj[1];
+    wire [31:0] vj2 = vj[2];
+    wire [31:0] vj3 = vj[3];
+    wire [31:0] vj4 = vj[4];
+    wire [31:0] vj5 = vj[5];
+    wire [31:0] vj6 = vj[6];
+    wire [31:0] vj7 = vj[7];
+    wire [31:0] vk0 = vk[0];
+    wire [31:0] vk1 = vk[1];
+    wire [31:0] vk2 = vk[2];
+    wire [31:0] vk3 = vk[3];
+    wire [31:0] vk4 = vk[4];
+    wire [31:0] vk5 = vk[5];
+    wire [31:0] vk6 = vk[6];
+    wire [31:0] vk7 = vk[7];
+    wire dj0 = dj[0];
+    wire dj1 = dj[1];
+    wire dj2 = dj[2];
+    wire dj3 = dj[3];
+    wire dj4 = dj[4];
+    wire dj5 = dj[5];
+    wire dj6 = dj[6];
+    wire dj7 = dj[7];
+    wire dk0 = dk[0];
+    wire dk1 = dk[1];
+    wire dk2 = dk[2];
+    wire dk3 = dk[3];
+    wire dk4 = dk[4];
+    wire dk5 = dk[5];
+    wire dk6 = dk[6];
+    wire dk7 = dk[7];
+    wire [`ROB_WIDTH-1:0] qj0 = qj[0];
+    wire [`ROB_WIDTH-1:0] qj1 = qj[1];
+    wire [`ROB_WIDTH-1:0] qj2 = qj[2];
+    wire [`ROB_WIDTH-1:0] qj3 = qj[3];
+    wire [`ROB_WIDTH-1:0] qj4 = qj[4];
+    wire [`ROB_WIDTH-1:0] qj5 = qj[5];
+    wire [`ROB_WIDTH-1:0] qj6 = qj[6];
+    wire [`ROB_WIDTH-1:0] qj7 = qj[7];
+    wire [`ROB_WIDTH-1:0] qk0 = qk[0];
+    wire [`ROB_WIDTH-1:0] qk1 = qk[1];
+    wire [`ROB_WIDTH-1:0] qk2 = qk[2];
+    wire [`ROB_WIDTH-1:0] qk3 = qk[3];
+    wire [`ROB_WIDTH-1:0] qk4 = qk[4];
+    wire [`ROB_WIDTH-1:0] qk5 = qk[5];
+    wire [`ROB_WIDTH-1:0] qk6 = qk[6];
+    wire [`ROB_WIDTH-1:0] qk7 = qk[7];
+    wire [31:0] a0 = a[0];
+    wire [31:0] a1 = a[1];
+    wire [31:0] a2 = a[2];
+    wire [31:0] a3 = a[3];
+    wire [31:0] a4 = a[4];
+    wire [31:0] a5 = a[5];
+    wire [31:0] a6 = a[6];
+    wire [31:0] a7 = a[7];
 
 endmodule

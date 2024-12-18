@@ -10,15 +10,17 @@ module rs (
     // from decoder
     input wire dec_ready,
     input wire [4:0] type,
-    input wire [31:0] val_j,
-    input wire [31:0] val_k,
-    input wire has_dep_j,
-    input wire has_dep_k,
-    input wire [`ROB_WIDTH-1:0] dep_j,
-    input wire [`ROB_WIDTH-1:0] dep_k,
     input wire [`ROB_WIDTH-1:0] rob_id,
     input wire [31:0] tja,
     input wire [31:0] fja,
+
+    // from rob, issue query
+    input wire has_dep_j,
+    input wire [`ROB_WIDTH-1:0] dep_j,
+    input wire [31:0] val_j,
+    input wire has_dep_k,
+    input wire [`ROB_WIDTH-1:0] dep_k,
+    input wire [31:0] val_k,
 
     // from rs
     input wire rs_ready,
@@ -196,6 +198,55 @@ module rs (
             end
         end
     end
+    
+    wire [31:0] vj0 = vj[0];
+    wire [31:0] vj1 = vj[1];
+    wire [31:0] vj2 = vj[2];
+    wire [31:0] vj3 = vj[3];
+    wire [31:0] vj4 = vj[4];
+    wire [31:0] vj5 = vj[5];
+    wire [31:0] vj6 = vj[6];
+    wire [31:0] vj7 = vj[7];
+    wire [31:0] vk0 = vk[0];
+    wire [31:0] vk1 = vk[1];
+    wire [31:0] vk2 = vk[2];
+    wire [31:0] vk3 = vk[3];
+    wire [31:0] vk4 = vk[4];
+    wire [31:0] vk5 = vk[5];
+    wire [31:0] vk6 = vk[6];
+    wire [31:0] vk7 = vk[7];
+    wire dj0 = dj[0];
+    wire dj1 = dj[1];
+    wire dj2 = dj[2];
+    wire dj3 = dj[3];
+    wire dj4 = dj[4];
+    wire dj5 = dj[5];
+    wire dj6 = dj[6];
+    wire dj7 = dj[7];
+    wire dk0 = dk[0];
+    wire dk1 = dk[1];
+    wire dk2 = dk[2];
+    wire dk3 = dk[3];
+    wire dk4 = dk[4];
+    wire dk5 = dk[5];
+    wire dk6 = dk[6];
+    wire dk7 = dk[7];
+    wire [`ROB_WIDTH-1:0] qj0 = qj[0];
+    wire [`ROB_WIDTH-1:0] qj1 = qj[1];
+    wire [`ROB_WIDTH-1:0] qj2 = qj[2];
+    wire [`ROB_WIDTH-1:0] qj3 = qj[3];
+    wire [`ROB_WIDTH-1:0] qj4 = qj[4];
+    wire [`ROB_WIDTH-1:0] qj5 = qj[5];
+    wire [`ROB_WIDTH-1:0] qj6 = qj[6];
+    wire [`ROB_WIDTH-1:0] qj7 = qj[7];
+    wire [`ROB_WIDTH-1:0] qk0 = qk[0];
+    wire [`ROB_WIDTH-1:0] qk1 = qk[1];
+    wire [`ROB_WIDTH-1:0] qk2 = qk[2];
+    wire [`ROB_WIDTH-1:0] qk3 = qk[3];
+    wire [`ROB_WIDTH-1:0] qk4 = qk[4];
+    wire [`ROB_WIDTH-1:0] qk5 = qk[5];
+    wire [`ROB_WIDTH-1:0] qk6 = qk[6];
+    wire [`ROB_WIDTH-1:0] qk7 = qk[7];
 
 
 endmodule
