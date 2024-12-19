@@ -133,9 +133,9 @@ module decoder(
                             2'b11: begin
                                 case(c_op_type)
                                     2'b00: c2i = {7'b0100000, c_rs2_p, c_rs1_p, 3'b000, c_rs1_p, r}; // c.sub
-                                    2'b01: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, im}; // c.xor
-                                    2'b10: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, im}; // c.or
-                                    2'b11: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, im}; // c.and
+                                    2'b01: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b100, c_rs1_p, r}; // c.xor
+                                    2'b10: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b110, c_rs1_p, r}; // c.or
+                                    2'b11: c2i = {7'b0, c_rs2_p, c_rs1_p, 3'b111, c_rs1_p, r}; // c.and
                                     default: c2i = 0;
                                 endcase
                             end

@@ -185,7 +185,7 @@ module cpu(
     wire [31:0] lsb_broadcast_value;
 
     // rob lsb
-    wire rob2lsb_store_enable;
+    wire [`ROB_WIDTH-1:0] rob2lsb_head_rob_id;
 
     // rob rs
     wire rob2rs_search_has_dep_1;
@@ -311,7 +311,7 @@ module cpu(
         .lsb_rob_id(lsb_broadcast_rob_id),
         .lsb_value(lsb_broadcast_value),
 
-        .store_enable(rob2lsb_store_enable),
+        .head_rob_id(rob2lsb_head_rob_id),
 
         .commit_ready(rob2reg_commit_ready),
         .commit_reg_id(rob2reg_commit_reg_id),
@@ -413,7 +413,7 @@ module cpu(
         .lsb_rob_id(lsb_broadcast_rob_id),
         .lsb_value(lsb_broadcast_value),
 
-        .store_enable(rob2lsb_store_enable),
+        .head_rob_id(rob2lsb_head_rob_id),
 
         .ls_enable(lsb2mem_ls_enable),
         .addr(lsb2mem_ls_addr),

@@ -31,9 +31,6 @@ module rob(
     input wire [`ROB_WIDTH-1:0] lsb_rob_id,
     input wire [31 : 0] lsb_value,
 
-    // to lsb
-    output wire store_enable,
-
     // commit to regfile
     output reg commit_ready,
     output reg [`ROB_WIDTH-1:0] commit_rob_id,
@@ -62,7 +59,8 @@ module rob(
     output reg [31:0] search_val_1_lsb,
     output reg search_has_dep_2_lsb,
     output reg [`ROB_WIDTH-1:0] search_dep_2_lsb,
-    output reg [31:0] search_val_2_lsb
+    output reg [31:0] search_val_2_lsb,
+    output wire [`ROB_WIDTH-1:0] head_rob_id
 
 );
 
@@ -83,6 +81,8 @@ module rob(
     reg [31:0] jump_addr[0:`ROB_SIZE-1]; // for branch: predicted jump addr; for jalr: pc + 4 storage
     reg [`ROB_WIDTH-1:0] head;
     reg [`ROB_WIDTH-1:0] tail;
+
+    assign head_rob_id = head;
 
     // instruction type: BR, ST, JALR, RG
     reg [1:0] inst_type[0:`ROB_SIZE-1];
@@ -131,7 +131,7 @@ module rob(
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
                 inst_val[i] <= 0;
-                // inst_addr[i] <= 0;
+                inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
                 status[i] <= 0;
             end
@@ -144,6 +144,7 @@ module rob(
             search_has_dep_2_rs <= search_in_has_dep_2 && !search_ready_2;
             search_dep_2_rs <= !search_in_has_dep_2 ? 0 : search_ready_2 ? 0 : search_rob_id_2;
             search_val_2_rs <= !search_in_has_dep_2 ? search_in_val_2 : search_ready_2 ? local_val_2 : 0;
+            
             search_has_dep_1_lsb <= search_in_has_dep_1 && !search_ready_1;
             search_dep_1_lsb <= !search_in_has_dep_1 ? 0 : search_ready_1 ? 0 : search_rob_id_1;
             search_val_1_lsb <= !search_in_has_dep_1 ? search_in_val_1 : search_ready_1 ? local_val_1 : 0;
@@ -157,7 +158,7 @@ module rob(
                 inst_rd[tail] <= rd;
                 inst_val[tail] <= 0;
                 jump_addr[tail] <= j_addr;
-                // inst_addr[tail] <= addr;
+                inst_addr[tail] <= addr;
                 inst_type[tail] <= type;
                 status[tail] <= IS;
                 tail <= tail + 1;
@@ -172,12 +173,12 @@ module rob(
             end
             // commit
             if (busy[head] && status[head] == WR) begin
-                // $write("time: %d", $time);
+                // $write("%d ", $time);
                 // $display("%h", inst_addr[head]);
                 head <= head + 1;
                 busy[head] <= 0;
                 commit_rob_id <= head;
-                // commit_addr <= inst_addr[head];
+                commit_addr <= inst_addr[head];
                 melt <= inst_type[head] == JALR;
                 if (inst_type[head] == BR) begin
                     commit_ready <= 0;

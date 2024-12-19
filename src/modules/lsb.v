@@ -41,7 +41,7 @@ module lsb(
     input wire [31 : 0] lsb_value,
 
     // from rob
-    input wire store_enable,
+    input wire [`ROB_WIDTH-1:0] head_rob_id,
 
     // to memctrl
     output wire ls_enable,
@@ -145,7 +145,7 @@ module lsb(
                 qk[tail] <= dep_k;
                 a[tail] <= imm;
                 rob_dest[tail] <= rob_id;
-                exe_ready[tail] <= !type[3];
+                exe_ready[tail] <= !type[3] && !(type == 4'b0100); // sw, sh, sb and lbu
                 tail <= tail + 1;
             end
             // ram
@@ -153,7 +153,7 @@ module lsb(
                 head <= head + 1;
             end
             // from rob
-            if (store_enable && inst_op[head][3]) begin
+            if (busy[head] && rob_dest[head] == head_rob_id) begin
                 exe_ready[head] <= 1;
             end
             // broadcast

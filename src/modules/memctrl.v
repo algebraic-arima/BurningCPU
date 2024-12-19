@@ -61,15 +61,15 @@ module memctrl(
     assign inst = load_val;
     assign load_val = state == 3'b000 ? 
                         icache_hit_b ? icache_inst_b :
-                        type[2:0] == 3'b000 ? {24'b0, cur_read_result_b} :
-                        type[2:0] == 3'b001 ? {16'b0, cur_read_result_h} :
+                        type[2:0] == 3'b000 ? {{24{cur_read_result_b[7]}}, cur_read_result_b} :
+                        type[2:0] == 3'b001 ? {{16{cur_read_result_h[15]}}, cur_read_result_h} :
                         type[2:0] == 3'b010 ? cur_read_result_w :
-                        type[2:0] == 3'b100 ? {{24{cur_read_result_b[7]}}, cur_read_result_b} :
-                        type[2:0] == 3'b101 ? {{16{cur_read_result_h[15]}}, cur_read_result_h} :
+                        type[2:0] == 3'b100 ? {24'b0, cur_read_result_b} :
+                        type[2:0] == 3'b101 ? {16'b0, cur_read_result_h} :
                         0 : 0;
     assign mem_dout = cur_store_val[7:0];
     assign mem_wr = type[3] && (state != 2'b00);
-    assign is_c = is_if && type == 4'b0001;
+    assign is_c = is_if && type == 4'b0101;
     assign icache_get_ready = state == 3'b001 && is_if;
     assign wr_ready = if_ready;
     assign wr_is_c = is_c;
@@ -134,9 +134,9 @@ module memctrl(
                         end else begin
                             if(is_if && icache_hit) begin
                                 if (icache_data_is_c) begin
-                                    type <= 3'b001;
+                                    type <= 4'b0101;
                                 end else begin
-                                    type <= 3'b010;
+                                    type <= 4'b0010;
                                 end
                                 state <= 3'b000;
                                 ls_finished <= 0;
@@ -171,7 +171,7 @@ module memctrl(
                             cur_read_result_h[7:0] <= mem_din;
                             cur_read_result_w[7:0] <= mem_din;
                             if (is_if && !(mem_din[0] && mem_din[1])) begin
-                                type <= 3'b001;
+                                type <= 4'b0101;
                             end 
                             cur_addr <= cur_addr + 1;
                             state <= 3'b011;
