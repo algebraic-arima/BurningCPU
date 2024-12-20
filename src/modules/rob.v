@@ -66,14 +66,14 @@ module rob(
 
     localparam IS = 2'b01;
     localparam WR = 2'b10;
-    localparam CO = 2'b11;
+    // localparam CO = 2'b11;
 
     localparam BR = 2'b00;
     localparam ST = 2'b01;
     localparam JALR = 2'b10;
     localparam RG = 2'b11;
 
-    reg [31:0] inst_addr[0:`ROB_SIZE-1];
+    // reg [31:0] inst_addr[0:`ROB_SIZE-1];
     reg busy[0:`ROB_SIZE-1];
     reg [1:0] status[0:`ROB_SIZE-1]; // IS, WR, CO
     reg [4:0] inst_rd[0:`ROB_SIZE-1];
@@ -102,7 +102,7 @@ module rob(
     assign empty_rob_id = tail;
     assign store_enable = !rob_empty && inst_type[head] == ST;
 
-    reg [31:0] commit_addr;
+    // reg [31:0] commit_addr;
 
     always @(posedge clk_in) begin: Main
         integer i;
@@ -131,7 +131,7 @@ module rob(
                 busy[i] <= 0;
                 inst_rd[i] <= 0;
                 inst_val[i] <= 0;
-                inst_addr[i] <= 0;
+                // inst_addr[i] <= 0;
                 jump_addr[i] <= 0;
                 status[i] <= 0;
             end
@@ -158,7 +158,7 @@ module rob(
                 inst_rd[tail] <= rd;
                 inst_val[tail] <= 0;
                 jump_addr[tail] <= j_addr;
-                inst_addr[tail] <= addr;
+                // inst_addr[tail] <= addr;
                 inst_type[tail] <= type;
                 status[tail] <= IS;
                 tail <= tail + 1;
@@ -178,7 +178,7 @@ module rob(
                 head <= head + 1;
                 busy[head] <= 0;
                 commit_rob_id <= head;
-                commit_addr <= inst_addr[head];
+                // commit_addr <= inst_addr[head];
                 melt <= inst_type[head] == JALR;
                 if (inst_type[head] == BR) begin
                     commit_ready <= 0;
@@ -204,86 +204,5 @@ module rob(
             end
         end
     end
-
-    wire [31:0] val0 = inst_val[0];
-    wire [31:0] val1 = inst_val[1];
-    wire [31:0] val2 = inst_val[2];
-    wire [31:0] val3 = inst_val[3];
-    wire [31:0] val4 = inst_val[4];
-    wire [31:0] val5 = inst_val[5];
-    wire [31:0] val6 = inst_val[6];
-    wire [31:0] val7 = inst_val[7];
-    wire [31:0] val8 = inst_val[8];
-    wire [31:0] val9 = inst_val[9];
-    wire [31:0] val10 = inst_val[10];
-    wire [31:0] val11 = inst_val[11];
-    wire [31:0] val12 = inst_val[12];
-    wire [31:0] val13 = inst_val[13];
-    wire [31:0] val14 = inst_val[14];
-    wire [31:0] val15 = inst_val[15];
-    wire [1:0] status0 = status[0];
-    wire [1:0] status1 = status[1];
-    wire [1:0] status2 = status[2];
-    wire [1:0] status3 = status[3];
-    wire [1:0] status4 = status[4];
-    wire [1:0] status5 = status[5];
-    wire [1:0] status6 = status[6];
-    wire [1:0] status7 = status[7];
-    wire [1:0] status8 = status[8];
-    wire [1:0] status9 = status[9];
-    wire [1:0] status10 = status[10];
-    wire [1:0] status11 = status[11];
-    wire [1:0] status12 = status[12];
-    wire [1:0] status13 = status[13];
-    wire [1:0] status14 = status[14];
-    wire [1:0] status15 = status[15];
-    wire [31:0] ia0 = inst_addr[0];
-    wire [31:0] ia1 = inst_addr[1];
-    wire [31:0] ia2 = inst_addr[2];
-    wire [31:0] ia3 = inst_addr[3];
-    wire [31:0] ia4 = inst_addr[4];
-    wire [31:0] ia5 = inst_addr[5];
-    wire [31:0] ia6 = inst_addr[6];
-    wire [31:0] ia7 = inst_addr[7];
-    wire [31:0] ia8 = inst_addr[8];
-    wire [31:0] ia9 = inst_addr[9];
-    wire [31:0] ia10 = inst_addr[10];
-    wire [31:0] ia11 = inst_addr[11];
-    wire [31:0] ia12 = inst_addr[12];
-    wire [31:0] ia13 = inst_addr[13];
-    wire [31:0] ia14 = inst_addr[14];
-    wire [31:0] ia15 = inst_addr[15];
-    wire [31:0] ja0 = jump_addr[0];
-    wire [31:0] ja1 = jump_addr[1];
-    wire [31:0] ja2 = jump_addr[2];
-    wire [31:0] ja3 = jump_addr[3];
-    wire [31:0] ja4 = jump_addr[4];
-    wire [31:0] ja5 = jump_addr[5];
-    wire [31:0] ja6 = jump_addr[6];
-    wire [31:0] ja7 = jump_addr[7];
-    wire [31:0] ja8 = jump_addr[8];
-    wire [31:0] ja9 = jump_addr[9];
-    wire [31:0] ja10 = jump_addr[10];
-    wire [31:0] ja11 = jump_addr[11];
-    wire [31:0] ja12 = jump_addr[12];
-    wire [31:0] ja13 = jump_addr[13];
-    wire [31:0] ja14 = jump_addr[14];
-    wire [31:0] ja15 = jump_addr[15];
-    wire [1:0] it0 = inst_type[0];
-    wire [1:0] it1 = inst_type[1];
-    wire [1:0] it2 = inst_type[2];
-    wire [1:0] it3 = inst_type[3];
-    wire [1:0] it4 = inst_type[4];
-    wire [1:0] it5 = inst_type[5];
-    wire [1:0] it6 = inst_type[6];
-    wire [1:0] it7 = inst_type[7];
-    wire [1:0] it8 = inst_type[8];
-    wire [1:0] it9 = inst_type[9];
-    wire [1:0] it10 = inst_type[10];
-    wire [1:0] it11 = inst_type[11];
-    wire [1:0] it12 = inst_type[12];
-    wire [1:0] it13 = inst_type[13];
-    wire [1:0] it14 = inst_type[14];
-    wire [1:0] it15 = inst_type[15];
 
 endmodule
