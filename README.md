@@ -3,19 +3,17 @@
 ## 仓库文件结构
 
 ```C++
-📦RISCV-CPU
-┣ 📂fpga       // FPGA 开发板相关
-┣ 📂script     // 编译测试相关参考脚本
-┣ 📂sim        // 仿真运行 Testbench
-┣ 📂src        // HDL 源代码
-┃ ┣ 📂common   // 题面提供部件源代码
-┃ ┣ 📜cpu.v    // CPU 核心代码
-┣ 📂testcase   // 测试点
-┃ ┣ 📂fpga     // 全部测试点 
-┃ ┗ 📂sim      // 仿真运行测试点
-┣ 📂testspace  // 编译运行结果
-┣ 📜Makefile   // 编译及测试脚本
-┗ 📜README.md  // 题面文档
+📦BurningCPU
+┣ 📂sim
+┣ 📂src
+┃ ┣ 📂modules
+┃ ┣ 📂utils
+┃ ┣ 📂common
+┃ ┣ 📜cpu.v
+┃ ┣ 📜hci.v
+┃ ┗ 📜riscv_top.v
+┣ 📜Makefile
+┗ 📜README.md
 ```
 
 ## rv32c instruction set
@@ -100,4 +98,10 @@ c.swsp|110|uimm[5:2,7:6]|rs2|10
 make run_sim name=your_testcase_name
 ```
 
+## CPU架构
 
+![image](doc/cpu_arch.png)
+
+## 乱序执行
+
+![image](doc/ooo.png)
