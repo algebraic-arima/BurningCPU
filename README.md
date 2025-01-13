@@ -102,6 +102,10 @@ make run_sim name=your_testcase_name
 
 ![image](doc/cpu_arch.png)
 
-## 乱序执行
+with some modifications to reduce WNS
 
-![image](doc/ooo.png)
+## 乱序执行 OoO
+
+![OoO](doc/ooo.png)
+
+from testpoint 006_multiarray
